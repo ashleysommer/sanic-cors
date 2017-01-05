@@ -4,7 +4,6 @@ cache:
 language: python
 python:
   - '3.5'
-  - pypy
 
 env:
 - SANIC=0.1.9
