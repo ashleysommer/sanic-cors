@@ -155,7 +155,7 @@ class CORS(object):
         resources_human = dict([(get_regexp_pattern(pattern), opts) for (pattern,opts) in resources])
         LOG.debug("Configuring CORS with resources: %s", resources_human)
 
-        cors_response_middleware = make_cores_response_middleware_function(resources)
+        cors_response_middleware = make_cors_response_middleware_function(resources)
         app.middleware('response')(cors_response_middleware)
 
         # Wrap exception handlers with cross_origin
@@ -173,7 +173,7 @@ class CORS(object):
         #         app.handle_user_exception = _after_request_decorator(
         #             app.handle_user_exception)
 
-def make_cores_response_middleware_function(resources):
+def make_cors_response_middleware_function(resources):
     async def cors_response_middleware(req, resp):
         # If CORS headers are set in a view decorator, pass
         if resp.headers.get(ACL_ORIGIN):
