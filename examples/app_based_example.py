@@ -1,30 +1,32 @@
 """
-Flask-Cors example
+Sanic-Cors example
 ===================
-This is a tiny Flask Application demonstrating Flask-Cors, making it simple
-to add cross origin support to your flask app!
+This is a tiny Sanic Application demonstrating Sanic-Cors, making it simple
+to add cross origin support to your sanic app!
 
-:copyright: (c) 2016 by Cory Dolphin.
+:copyright: (c) 2017 by Cory Dolphin.
 :license:   MIT/X11, see LICENSE for more details.
 """
-from flask import Flask, jsonify
+from sanic import Sanic
+from sanic.response import json, text
+from sanic.exceptions import ServerError
 import logging
 try:
-    from flask_cors import CORS  # The typical way to import flask-cors
+    from sanic_cors import CORS  # The typical way to import sanic-cors
 except ImportError:
     # Path hack allows examples to be run without installation.
     import os
     parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.sys.path.insert(0, parentdir)
 
-    from flask_cors import CORS
+    from sanic_cors import CORS
 
 
-app = Flask('FlaskCorsAppBasedExample')
+app = Sanic('SanicCorsAppBasedExample')
 logging.basicConfig(level=logging.INFO)
 
-# To enable logging for flask-cors,
-logging.getLogger('flask_cors').level = logging.DEBUG
+# To enable logging for sanic-cors,
+logging.getLogger('sanic_cors').level = logging.DEBUG
 
 # One of the simplest configurations. Exposes all resources matching /api/* to
 # CORS and allows the Content-Type header, which is necessary to POST JSON
@@ -33,12 +35,12 @@ CORS(app, resources=r'/api/*')
 
 
 @app.route("/")
-def helloWorld():
+def helloWorld(request):
     '''
         Since the path '/' does not match the regular expression r'/api/*',
         this route does not have CORS headers set.
     '''
-    return '''
+    return text('''
 <html>
     <h1>Hello CORS!</h1>
     <h3> End to end editable example with jquery! </h3>
@@ -46,10 +48,10 @@ def helloWorld():
     <script src="//static.jsbin.com/js/embed.min.js?3.35.12"></script>
 
 </html>
-'''
+''')
 
 @app.route("/api/v1/users/")
-def list_users():
+def list_users(request):
     '''
         Since the path matches the regular expression r'/api/*', this resource
         automatically has CORS headers set. The expected result is as follows:
@@ -69,11 +71,11 @@ def list_users():
         }
 
     '''
-    return jsonify(user="joe")
+    return json({"user": "joe"})
 
 
-@app.route("/api/v1/users/create", methods=['POST'])
-def create_user():
+@app.route("/api/v1/users/create", methods=['POST', 'OPTIONS'])
+def create_user(request):
     '''
         Since the path matches the regular expression r'/api/*', this resource
         automatically has CORS headers set.
@@ -113,10 +115,10 @@ def create_user():
         }
 
     '''
-    return jsonify(success=True)
+    return json({"success": True})
 
 @app.route("/api/exception")
-def get_exception():
+def get_exception(request):
     '''
         Since the path matches the regular expression r'/api/*', this resource
         automatically has CORS headers set.
@@ -140,10 +142,10 @@ def get_exception():
     '''
     raise Exception("example")
 
-@app.errorhandler(500)
-def server_error(e):
+@app.exception(ServerError)
+def server_error(req, e):
     logging.exception('An error occurred during a request. %s', e)
-    return "An internal error occured", 500
+    return text("An internal error occured", status=500)
 
 
 if __name__ == "__main__":

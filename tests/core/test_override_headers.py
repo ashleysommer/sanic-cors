@@ -3,24 +3,26 @@
     test
     ~~~~
 
-    Flask-Cors tests module
+    Sanic-Cors tests module
 """
 
-from ..base_test import FlaskCorsTestCase
-from flask import Flask, Response
+from ..base_test import SanicCorsTestCase
+#from sanic import Sanic, Response
+from sanic import Sanic
+from sanic.response import HTTPResponse
 
-from flask_cors import *
-from flask_cors.core import *
+from sanic_cors import *
+from sanic_cors.core import *
 
-class ResponseHeadersOverrideTestCaseIntegration(FlaskCorsTestCase):
+class ResponseHeadersOverrideTestCaseIntegration(SanicCorsTestCase):
     def setUp(self):
-        self.app = Flask(__name__)
+        self.app = Sanic(__name__)
         CORS(self.app)
 
         @self.app.route('/')
-        def index():
-            response = Response(headers={"custom": "dictionary"})
-            return 'Welcome'
+        def index(request):
+            return HTTPResponse(body='Welcome', headers={"custom": "dictionary"})
+
 
     def test_override_headers(self):
         '''

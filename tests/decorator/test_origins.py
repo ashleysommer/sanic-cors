@@ -2,84 +2,85 @@
 """
     test
     ~~~~
-    Flask-CORS is a simple extension to Flask allowing you to support cross
+    Sanic-CORS is a simple extension to Sanic allowing you to support cross
     origin resource sharing (CORS) using a simple decorator.
 
-    :copyright: (c) 2016 by Cory Dolphin.
+    :copyright: (c) 2017 by Cory Dolphin.
     :license: MIT, see LICENSE for more details.
 """
 
-from ..base_test import FlaskCorsTestCase
-from flask import Flask
+from ..base_test import SanicCorsTestCase
+from sanic import Sanic
+from sanic.response import text
 import re
-from flask_cors import *
-from flask_cors.core import *
+from sanic_cors import *
+from sanic_cors.core import *
 
 letters = 'abcdefghijklmnopqrstuvwxyz'  # string.letters is not PY3 compatible
 
-class OriginsTestCase(FlaskCorsTestCase):
+class OriginsTestCase(SanicCorsTestCase):
     def setUp(self):
-        self.app = Flask(__name__)
+        self.app = Sanic(__name__)
 
         @self.app.route('/')
-        @cross_origin()
-        def wildcard():
-            return 'Welcome!'
+        @cross_origin(self.app)
+        def wildcard(request):
+            return text('Welcome!')
 
         @self.app.route('/test_always_send')
-        @cross_origin(always_send=True)
-        def test_always_send():
-            return 'Welcome!'
+        @cross_origin(self.app, always_send=True)
+        def test_always_send(request):
+            return text('Welcome!')
 
         @self.app.route('/test_always_send_no_wildcard')
-        @cross_origin(always_send=True, send_wildcard=False)
-        def test_always_send_no_wildcard():
-            return 'Welcome!'
+        @cross_origin(self.app, always_send=True, send_wildcard=False)
+        def test_always_send_no_wildcard(request):
+            return text('Welcome!')
 
         @self.app.route('/test_send_wildcard_with_origin')
-        @cross_origin(send_wildcard=True)
-        def test_send_wildcard_with_origin():
-            return 'Welcome!'
+        @cross_origin(self.app, send_wildcard=True)
+        def test_send_wildcard_with_origin(request):
+            return text('Welcome!')
 
         @self.app.route('/test_list')
-        @cross_origin(origins=["http://foo.com", "http://bar.com"])
-        def test_list():
-            return 'Welcome!'
+        @cross_origin(self.app, origins=["http://foo.com", "http://bar.com"])
+        def test_list(request):
+            return text('Welcome!')
 
         @self.app.route('/test_string')
-        @cross_origin(origins="http://foo.com")
-        def test_string():
-            return 'Welcome!'
+        @cross_origin(self.app, origins="http://foo.com")
+        def test_string(request):
+            return text('Welcome!')
 
         @self.app.route('/test_set')
-        @cross_origin(origins=set(["http://foo.com", "http://bar.com"]))
-        def test_set():
-            return 'Welcome!'
+        @cross_origin(self.app, origins=set(["http://foo.com", "http://bar.com"]))
+        def test_set(request):
+            return text('Welcome!')
 
         @self.app.route('/test_subdomain_regex')
-        @cross_origin(origins=r"http?://\w*\.?example\.com:?\d*/?.*")
-        def test_subdomain_regex():
-            return ''
+        @cross_origin(self.app, origins=r"http?://\w*\.?example\.com:?\d*/?.*")
+        def test_subdomain_regex(request):
+            return text('')
 
         @self.app.route('/test_compiled_subdomain_regex')
-        @cross_origin(origins=re.compile(r"http?://\w*\.?example\.com:?\d*/?.*"))
-        def test_compiled_subdomain_regex():
-            return ''
+        @cross_origin(self.app, origins=re.compile(r"http?://\w*\.?example\.com:?\d*/?.*"))
+        def test_compiled_subdomain_regex(request):
+            return text('')
 
         @self.app.route('/test_regex_list')
-        @cross_origin(origins=[r".*.example.com", r".*.otherexample.com"])
-        def test_regex_list():
-            return ''
+        @cross_origin(self.app, origins=[r".*.example.com", r".*.otherexample.com"])
+        def test_regex_list(request):
+            return text('')
 
         @self.app.route('/test_regex_mixed_list')
-        @cross_origin(origins=["http://example.com", r".*.otherexample.com"])
-        def test_regex_mixed_list():
-            return ''
+        @cross_origin(self.app, origins=["http://example.com", r".*.otherexample.com"])
+        def test_regex_mixed_list(request):
+            return text('')
 
         @self.app.route('/test_multiple_protocols')
-        @cross_origin(origins="https?://example.com")
-        def test_multiple_protocols():
-            return ''
+        @cross_origin(self.app, origins="https?://example.com")
+        def test_multiple_protocols(request):
+            return text('')
 
     def test_defaults_no_origin(self):
         ''' If there is no Origin header in the request, the
@@ -93,7 +94,7 @@ class OriginsTestCase(FlaskCorsTestCase):
             Access-Control-Allow-Origin header should be included.
         '''
         for resp in self.iter_responses('/', origin='http://example.com'):
-            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status, 200)
             self.assertEqual(resp.headers.get(ACL_ORIGIN), 'http://example.com')
 
     def test_always_send_no_wildcard(self):
@@ -102,12 +103,12 @@ class OriginsTestCase(FlaskCorsTestCase):
             allowed origins, we should send it anyways.
         '''
         for resp in self.iter_responses('/'):
-            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status, 200)
             self.assertEqual(resp.headers.get(ACL_ORIGIN), '*')
 
     def test_always_send_no_wildcard_origins(self):
         for resp in self.iter_responses('/'):
-            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status, 200)
             self.assertEqual(resp.headers.get(ACL_ORIGIN), '*')
 
 
@@ -116,7 +117,7 @@ class OriginsTestCase(FlaskCorsTestCase):
             Access-Control-Allow-Origin header should be included.
         '''
         for resp in self.iter_responses('/test_send_wildcard_with_origin', origin='http://example.com'):
-            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status, 200)
             self.assertEqual(resp.headers.get(ACL_ORIGIN), '*')
 
     def test_list_serialized(self):
@@ -195,8 +196,8 @@ class OriginsTestCase(FlaskCorsTestCase):
 
     def test_multiple_protocols(self):
         import logging
-        logging.getLogger('flask_cors').level = logging.DEBUG
-        resp = self.get('test_multiple_protocols', origin='https://example.com')
+        logging.getLogger('sanic_cors').level = logging.DEBUG
+        resp = self.get('/test_multiple_protocols', origin='https://example.com')
         self.assertEqual('https://example.com', resp.headers.get(ACL_ORIGIN))
 
 

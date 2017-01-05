@@ -4,16 +4,15 @@
     ~~~~
     Core functionality shared between the extension and the decorator.
 
-    :copyright: (c) 2016 by Cory Dolphin.
+    :copyright: (c) 2017 by Cory Dolphin.
     :license: MIT, see LICENSE for more details.
 """
 import re
 import logging
 import collections
 from datetime import timedelta
-from six import string_types
-from flask import request, current_app
-from werkzeug.datastructures import Headers, MultiDict
+from sanic import request, response
+from multidict import CIMultiDict
 
 LOG = logging.getLogger(__name__)
 
@@ -39,7 +38,7 @@ CONFIG_OPTIONS = ['CORS_ORIGINS', 'CORS_METHODS', 'CORS_ALLOW_HEADERS',
 # Attribute added to request object by decorator to indicate that CORS
 # was evaluated, in case the decorator and extension are both applied
 # to a view.
-FLASK_CORS_EVALUATED = '_FLASK_CORS_EVALUATED'
+SANIC_CORS_EVALUATED = '_SANIC_CORS_EVALUATED'
 
 # Strange, but this gets the type of a compiled regex, which is otherwise not
 # exposed in a public API.
@@ -75,7 +74,7 @@ def parse_resources(resources):
                       key=pattern_length,
                       reverse=True)
 
-    elif isinstance(resources, string_types):
+    elif isinstance(resources, str):
         return [(re_fix(resources), {})]
 
     elif isinstance(resources, collections.Iterable):
@@ -166,7 +165,7 @@ def get_allow_headers(options, acl_request_headers):
 
 def get_cors_headers(options, request_headers, request_method):
     origins_to_set = get_cors_origins(options, request_headers.get('Origin'))
-    headers = MultiDict()
+    headers = CIMultiDict()
 
     if not origins_to_set:  # CORS is not enabled for this route
         return headers
@@ -192,7 +191,7 @@ def get_cors_headers(options, request_headers, request_method):
             # list of methods do not set any additional headers and terminate
             # this set of steps.
             headers[ACL_ALLOW_HEADERS] = get_allow_headers(options, request_headers.get(ACL_REQUEST_HEADERS))
-            headers[ACL_MAX_AGE] = options.get('max_age')
+            headers[ACL_MAX_AGE] = str(options.get('max_age')) #sanic cannot handle integers in header values.
             headers[ACL_METHODS] = options.get('methods')
         else:
             LOG.info("The request's Access-Control-Request-Method header does not match allowed methods. CORS headers will not be applied.")
@@ -209,12 +208,12 @@ def get_cors_headers(options, request_headers, request_method):
               any(map(probably_regex, options.get('origins')))):
             headers.add('Vary', 'Origin')
 
-    return MultiDict((k, v) for k, v in headers.items() if v)
+    return CIMultiDict((k, v) for k, v in headers.items() if v)
 
 
-def set_cors_headers(resp, options):
+def set_cors_headers(req, resp, options):
     """
-    Performs the actual evaluation of Flas-CORS options and actually
+    Performs the actual evaluation of Sanic-CORS options and actually
     modifies the response object.
 
     This function is used both in the decorator and the after_request
@@ -222,18 +221,18 @@ def set_cors_headers(resp, options):
     """
 
     # If CORS has already been evaluated via the decorator, skip
-    if hasattr(resp, FLASK_CORS_EVALUATED):
+    if isinstance(resp.headers, (dict, CIMultiDict)) and SANIC_CORS_EVALUATED in resp.headers:
         LOG.debug('CORS have been already evaluated, skipping')
+        del resp.headers[SANIC_CORS_EVALUATED]
         return resp
 
     # Some libraries, like OAuthlib, set resp.headers to non Multidict
     # objects (Werkzeug Headers work as well). This is a problem because
     # headers allow repeated values.
-    if (not isinstance(resp.headers, Headers)
-           and not isinstance(resp.headers, MultiDict)):
-        resp.headers = MultiDict(resp.headers)
+    if not isinstance(resp.headers, CIMultiDict):
+        resp.headers = CIMultiDict(resp.headers)
 
-    headers_to_set = get_cors_headers(options, request.headers, request.method)
+    headers_to_set = get_cors_headers(options, req.headers, req.method)
 
     LOG.debug('Settings CORS headers: %s', str(headers_to_set))
 
@@ -291,13 +290,13 @@ def get_cors_options(appInstance, *dicts):
     return serialize_options(options)
 
 
-def get_app_kwarg_dict(appInstance=None):
+def get_app_kwarg_dict(appInstance): #appInstance=None TODO
     """Returns the dictionary of CORS specific app configurations."""
-    app = (appInstance or current_app)
-
+    #app = (appInstance or current_app) //TODO: current_app
+    app = appInstance
     # In order to support blueprints which do not have a config attribute
-    app_config = getattr(app, 'config', {})
-
+    #app_config = getattr(app, 'config', {}) //TODO. app.config does not have a .get()
+    app_config = {}
     return dict(
         (k.lower().replace('cors_', ''), app_config.get(k))
         for k in CONFIG_OPTIONS
@@ -314,7 +313,7 @@ def flexible_str(obj):
     """
     if obj is None:
         return None
-    elif(not isinstance(obj, string_types)
+    elif(not isinstance(obj, str)
             and isinstance(obj, collections.Iterable)):
         return ', '.join(str(item) for item in sorted(obj))
     else:
@@ -331,7 +330,7 @@ def ensure_iterable(inst):
     """
     Wraps scalars or string types as a list, or returns the iterable instance.
     """
-    if isinstance(inst, string_types):
+    if isinstance(inst, str):
         return [inst]
     elif not isinstance(inst, collections.Iterable):
         return [inst]
@@ -350,7 +349,7 @@ def serialize_options(opts):
 
     for key in opts.keys():
         if key not in DEFAULT_OPTIONS:
-             LOG.warn("Unknown option passed to Flask-CORS: %s", key)
+             LOG.warn("Unknown option passed to Sanic-CORS: %s", key)
 
     # Ensure origins is a list of allowed origins with at least one entry.
     options['origins'] = sanitize_regex_param(options.get('origins'))

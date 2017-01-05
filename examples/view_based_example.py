@@ -1,32 +1,34 @@
 """
-Flask-Cors example
+Sanic-Cors example
 ===================
-This is a tiny Flask Application demonstrating Flask-Cors, making it simple
-to add cross origin support to your flask app!
+This is a tiny Sanic Application demonstrating Sanic-Cors, making it simple
+to add cross origin support to your sanic app!
 
-:copyright: (c) 2016 by Cory Dolphin.
+:copyright: (c) 2017 by Cory Dolphin.
 :license:   MIT/X11, see LICENSE for more details.
 """
-from flask import Flask, jsonify
+from sanic import Sanic
+from sanic.response import json, text
 import logging
 try:
-    # The typical way to import flask-cors
-    from flask_cors import cross_origin
+    # The typical way to import sanic-cors
+    from sanic_cors import cross_origin
 except ImportError:
     # Path hack allows examples to be run without installation.
     import os
     parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.sys.path.insert(0, parentdir)
 
-    from flask_cors import cross_origin
+    from sanic_cors import cross_origin
 
 
-app = Flask('FlaskCorsViewBasedExample')
+app = Sanic('SanicCorsViewBasedExample')
 logging.basicConfig(level=logging.INFO)
 
-@app.route("/", methods=['GET'])
-@cross_origin()
-def helloWorld():
+
+@app.route("/", methods=['GET', 'OPTIONS'])
+@cross_origin(app)
+def hello_world(request):
     '''
         This view has CORS enabled for all domains, representing the simplest
         configuration of view-based decoration. The expected result is as
@@ -44,17 +46,17 @@ def helloWorld():
 
         <h1>Hello CORS!</h1> Read about my spec at the
         <a href="http://www.w3.org/TR/cors/">W3</a> Or, checkout my documentation
-        on <a href="https://github.com/corydolphin/flask-cors">Github</a>
+        on <a href="https://github.com/ashleysommer/sanic-cors">Github</a>
 
     '''
-    return '''<h1>Hello CORS!</h1> Read about my spec at the
+    return text('''<h1>Hello CORS!</h1> Read about my spec at the
 <a href="http://www.w3.org/TR/cors/">W3</a> Or, checkout my documentation
-on <a href="https://github.com/corydolphin/flask-cors">Github</a>'''
+on <a href="https://github.com/ashleysommer/sanic-cors">Github</a>''')
 
 
-@app.route("/api/v1/users/create", methods=['GET', 'POST'])
-@cross_origin(allow_headers=['Content-Type'])
-def cross_origin_json_post():
+@app.route("/api/v1/users/create", methods=['GET', 'POST', 'OPTIONS'])
+@cross_origin(app, allow_headers=['Content-Type'])
+def cross_origin_json_post(request):
     '''
         This view has CORS enabled for all domains, and allows browsers
         to send the Content-Type header, allowing cross domain AJAX POST
@@ -96,7 +98,7 @@ def cross_origin_json_post():
 
     '''
 
-    return jsonify(success=True)
+    return json({"success":True})
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -4,10 +4,10 @@
     TODO: move integration tests (e.g. all that test a full request cycle)
     into smaller, broken-up unit tests to simplify testing.
     ~~~~
-    Flask-CORS is a simple extension to Flask allowing you to support cross
+    Sanic-CORS is a simple extension to Sanic allowing you to support cross
     origin resource sharing (CORS) using a simple decorator.
 
-    :copyright: (c) 2016 by Cory Dolphin.
+    :copyright: (c) 2017 by Cory Dolphin.
     :license: MIT, see LICENSE for more details.
 """
 
@@ -16,8 +16,7 @@ try:
 except ImportError:
     import unittest
 
-from flask_cors.core import *
-
+from sanic_cors.core import *
 
 class InternalsTestCase(unittest.TestCase):
     def test_try_match(self):
@@ -59,12 +58,12 @@ class InternalsTestCase(unittest.TestCase):
         )
 
     def test_get_allow_headers_matching_none(self):
-        options = serialize_options({'allow_headers': r'X-FLASK-.*'})
+        options = serialize_options({'allow_headers': r'X-SANIC-.*'})
 
-        self.assertEquals(get_allow_headers(options, 'X-FLASK-CORS'),
-                          'X-FLASK-CORS')
+        self.assertEquals(get_allow_headers(options, 'X-SANIC-CORS'),
+                          'X-SANIC-CORS')
         self.assertEquals(
-            get_allow_headers(options, 'X-NOT-FLASK-CORS'),
+            get_allow_headers(options, 'X-NOT-SANIC-CORS'),
             ''
         )
 

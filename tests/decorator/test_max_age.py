@@ -2,39 +2,40 @@
 """
     test
     ~~~~
-    Flask-CORS is a simple extension to Flask allowing you to support cross
+    Sanic-CORS is a simple extension to Sanic allowing you to support cross
     origin resource sharing (CORS) using a simple decorator.
 
-    :copyright: (c) 2016 by Cory Dolphin.
+    :copyright: (c) 2017 by Cory Dolphin.
     :license: MIT, see LICENSE for more details.
 """
 from datetime import timedelta
 import sys
-from ..base_test import FlaskCorsTestCase
-from flask import Flask
+from ..base_test import SanicCorsTestCase
+from sanic import Sanic
+from sanic.response import text
 
-from flask_cors import *
-from flask_cors.core import *
+from sanic_cors import *
+from sanic_cors.core import *
 
 
-class MaxAgeTestCase(FlaskCorsTestCase):
+class MaxAgeTestCase(SanicCorsTestCase):
     def setUp(self):
-        self.app = Flask(__name__)
+        self.app = Sanic(__name__)
 
         @self.app.route('/defaults')
-        @cross_origin()
-        def defaults():
-            return 'Should only return headers on OPTIONS'
+        @cross_origin(self.app)
+        def defaults(request):
+            return text('Should only return headers on OPTIONS')
 
         @self.app.route('/test_string')
-        @cross_origin(max_age=600)
-        def test_string():
-            return 'Open!'
+        @cross_origin(self.app, max_age=600)
+        def test_string(request):
+            return text('Open!')
 
         @self.app.route('/test_time_delta')
-        @cross_origin(max_age=timedelta(minutes=10))
-        def test_time_delta():
-            return 'Open!'
+        @cross_origin(self.app, max_age=timedelta(minutes=10))
+        def test_time_delta(request):
+            return text('Open!')
 
     def test_defaults(self):
         ''' By default, no max-age headers should be returned

@@ -3,35 +3,30 @@ cache:
 - pip
 language: python
 python:
-  - '2.6'
-  - '2.7'
-  - '3.3'
-  - '3.4'
   - '3.5'
+  - '3.6'
   - pypy
 
 env:
-- FLASK=0.10.1
-- FLASK=0.10
+- SANIC=0.1.9
 
 install:
-  - pip install -U setuptools pep8 six coverage docutils pygments flask==$FLASK
+  - pip install -U setuptools pep8 coverage docutils pygments sanic==$SANIC
 
 script:
   - coverage erase
-  - nosetests --with-coverage --cover-package=flask_cors
+  - nosetests --with-coverage --cover-package=sanic_cors
   - python setup.py clean build install
 
 after_success:
-  - pep8 flask_cors.py
+  - pep8 sanic_cors.py
 
-deploy:
-  provider: pypi
-  user: CoryDolphin
-  password:
-    secure: c/z1OYmniNlJ7F7G+TipOlJfVLCEz0F09JCJJ4+TPB/DTxajxarMEygX/LrvBOLvbe1EvAKO9p/SOagAul00YXU/rb2i1k1tJnKF2A6KKSLOsZbTcGWNcInOaLKql4Cv8Ts1cOfMiTVHBQLR+1FCw+IuZ44N+KhF0tsFOejEmRc=
-  distributions: "sdist bdist_wheel"
-  on:
-    tags: true
-    repo: corydolphin/flask-cors
-    condition: $TRAVIS_PYTHON_VERSION != *2.6* # Ensures we release a 2.7X wheel
+#deploy:
+#  provider: pypi
+#  user: ashleysommer
+#  password: password
+#  distributions: "sdist bdist_wheel"
+#  on:
+#    tags: true
+#    repo: ashleysommer/sanic-cors
+#    condition: $TRAVIS_PYTHON_VERSION != *3.5* # Ensures we release a 3.5 wheel

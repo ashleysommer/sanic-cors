@@ -2,23 +2,23 @@
 """
     test
     ~~~~
-    Flask-CORS is a simple extension to Flask allowing you to support cross
+    Sanic-CORS is a simple extension to Sanic allowing you to support cross
     origin resource sharing (CORS) using a simple decorator.
 
-    :copyright: (c) 2016 by Cory Dolphin.
+    :copyright: (c) 2017 by Cory Dolphin.
     :license: MIT, see LICENSE for more details.
 """
-from flask import Flask
+from sanic import Sanic
 try:
     import unittest2 as unittest
 except ImportError:
     import unittest
+from sanic_cors import *
+from sanic_cors.core import *
+from sanic import utils
 
-from flask_cors import *
-from flask_cors.core import *
 
-
-class FlaskCorsTestCase(unittest.TestCase):
+class SanicCorsTestCase(unittest.TestCase):
     def shortDescription(self):
         """
         Get's the one liner description to be displayed.
@@ -40,14 +40,16 @@ class FlaskCorsTestCase(unittest.TestCase):
         for verb in verbs:
             yield self._request(verb.lower(), path, **kwargs)
 
-    def _request(self, verb, *args, **kwargs):
+    def _request(self, verb, path, *args, **kwargs):
         _origin = kwargs.pop('origin', None)
         headers = kwargs.pop('headers', {})
         if _origin:
             headers.update(Origin=_origin)
-
-        with self.app.test_client() as c:
-            return getattr(c, verb)(*args, headers=headers, **kwargs)
+        if not str(path).startswith("http") and not str(path).startswith("/"):
+            path = ''.join(['/', path])
+        request, response = utils.sanic_endpoint_test(self.app, method=verb, uri=path, *args, debug=True,
+                                                headers=headers, **kwargs)
+        return response
 
     def get(self, *args, **kwargs):
         return self._request('get', *args, **kwargs)

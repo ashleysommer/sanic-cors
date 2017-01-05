@@ -3,34 +3,34 @@
     test
     ~~~~
 
-    Flask-Cors tests module
+    Sanic-Cors tests module
 """
 
-from ..base_test import FlaskCorsTestCase
-from flask import Flask
+from ..base_test import SanicCorsTestCase
+from sanic import Sanic
+from sanic.response import text
+from sanic_cors import *
+from sanic_cors.core import *
 
-from flask_cors import *
-from flask_cors.core import *
-
-class AllowHeadersTestCaseIntegration(FlaskCorsTestCase):
+class AllowHeadersTestCaseIntegration(SanicCorsTestCase):
     def setUp(self):
-        self.app = Flask(__name__)
+        self.app = Sanic(__name__)
 
         @self.app.route('/test_default')
-        @cross_origin()
-        def test_default():
-            return 'Welcome!'
+        @cross_origin(self.app)
+        def test_default(request):
+            return text('Welcome!')
 
         @self.app.route('/test_allow_headers')
-        @cross_origin(allow_headers=['X-Example-Header-B',
+        @cross_origin(self.app, allow_headers=['X-Example-Header-B',
                                      'X-Example-Header-A'])
-        def test_allow_headers():
-            return 'Welcome!'
+        def test_allow_headers(request):
+            return text('Welcome!')
 
         @self.app.route('/test_allow_headers_regex')
-        @cross_origin(allow_headers=[r'X-COMPANY-.*'])
-        def test_allow_headers_regex():
-            return 'Welcome!'
+        @cross_origin(self.app, allow_headers=[r'X-COMPANY-.*'])
+        def test_allow_headers_regex(request):
+            return text('Welcome!')
 
     def test_default(self):
         for resp in self.iter_responses('/test_default'):

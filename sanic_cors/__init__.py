@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-    flask_cors
+    sanic_cors
     ~~~~
-    Flask-CORS is a simple extension to Flask allowing you to support cross
+    Sanic-CORS is a simple extension to Sanic allowing you to support cross
     origin resource sharing (CORS) using a simple decorator.
 
-    :copyright: (c) 2016 by Cory Dolphin.
+    :copyright: (c) 2017 by Cory Dolphin.
     :license: MIT, see LICENSE for more details.
 """
 from .decorator import cross_origin
@@ -24,7 +24,7 @@ except ImportError:
             pass
 
 # Set initial level to WARN. Users must manually enable logging for
-# flask_cors to see our logging.
+# sanic_cors to see our logging.
 rootlogger = logging.getLogger(__name__)
 rootlogger.addHandler(NullHandler())
 

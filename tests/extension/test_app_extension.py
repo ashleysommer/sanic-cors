@@ -2,25 +2,26 @@
 """
     test
     ~~~~
-    Flask-CORS is a simple extension to Flask allowing you to support cross
+    Sanic-CORS is a simple extension to Sanic allowing you to support cross
     origin resource sharing (CORS) using a simple decorator.
 
-    :copyright: (c) 2016 by Cory Dolphin.
+    :copyright: (c) 2017 by Cory Dolphin.
     :license: MIT, see LICENSE for more details.
 """
 
 import re
-from ..base_test import FlaskCorsTestCase
-from flask import Flask, jsonify
+from ..base_test import SanicCorsTestCase
+from sanic import Sanic
+from sanic.response import json, text
 
-from flask_cors import *
-from flask_cors.core import *
+from sanic_cors import *
+from sanic_cors.core import *
 
 letters = 'abcdefghijklmnopqrstuvwxyz'  # string.letters is not PY3 compatible
 
-class AppExtensionRegexp(FlaskCorsTestCase):
+class AppExtensionRegexp(SanicCorsTestCase):
     def setUp(self):
-        self.app = Flask(__name__)
+        self.app = Sanic(__name__)
         CORS(self.app, resources={
             r'/test_list': {'origins': ["http://foo.com", "http://bar.com"]},
             r'/test_string': {'origins': 'http://foo.com'},
@@ -46,24 +47,40 @@ class AppExtensionRegexp(FlaskCorsTestCase):
         })
 
         @self.app.route('/test_defaults')
-        def wildcard():
-            return 'Welcome!'
+        def wildcard(request):
+            return text('Welcome!')
 
         @self.app.route('/test_send_wildcard_with_origin')
-        def send_wildcard_with_origin():
-            return 'Welcome!'
+        def send_wildcard_with_origin(request):
+            return text('Welcome!')
 
         @self.app.route('/test_list')
-        def test_list():
-            return 'Welcome!'
+        def test_list(request):
+            return text('Welcome!')
 
         @self.app.route('/test_string')
-        def test_string():
-            return 'Welcome!'
+        def test_string(request):
+            return text('Welcome!')
 
         @self.app.route('/test_set')
-        def test_set():
-            return 'Welcome!'
+        def test_set(request):
+            return text('Welcome!')
+
+        @self.app.route('/test_subdomain_regex')
+        def test_set(request):
+            return text('Welcome!')
+
+        @self.app.route('/test_regex_list')
+        def test_set(request):
+            return text('Welcome!')
+
+        @self.app.route('/test_regex_mixed_list')
+        def test_set(request):
+            return text('Welcome!')
+
+        @self.app.route('/test_compiled_subdomain_regex')
+        def test_set(request):
+            return text('Welcome!')
 
     def test_defaults_no_origin(self):
         ''' If there is no Origin header in the request,
@@ -77,7 +94,7 @@ class AppExtensionRegexp(FlaskCorsTestCase):
             Access-Control-Allow-Origin header should be included.
         '''
         for resp in self.iter_responses('/test_defaults', origin='http://example.com'):
-            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status, 200)
             self.assertEqual(resp.headers.get(ACL_ORIGIN), 'http://example.com')
 
     def test_send_wildcard_with_origin(self):
@@ -85,7 +102,7 @@ class AppExtensionRegexp(FlaskCorsTestCase):
             Access-Control-Allow-Origin header should be included.
         '''
         for resp in self.iter_responses('/test_send_wildcard_with_origin', origin='http://example.com'):
-            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status, 200)
             self.assertEqual(resp.headers.get(ACL_ORIGIN), '*')
 
     def test_list_serialized(self):
@@ -113,7 +130,7 @@ class AppExtensionRegexp(FlaskCorsTestCase):
         self.assertEqual(allowed, 'http://bar.com')
 
     def test_not_matching_origins(self):
-        for resp in self.iter_responses('/test_list',origin="http://bazz.com"):
+        for resp in self.iter_responses('/test_list', origin="http://bazz.com"):
             self.assertFalse(ACL_ORIGIN in resp.headers)
 
     def test_subdomain_regex(self):
@@ -166,142 +183,142 @@ class AppExtensionRegexp(FlaskCorsTestCase):
             self.get('/test_regex_mixed_list', origin='http://example.com').headers.get(ACL_ORIGIN))
 
 
-class AppExtensionList(FlaskCorsTestCase):
+class AppExtensionList(SanicCorsTestCase):
     def setUp(self):
-        self.app = Flask(__name__)
+        self.app = Sanic(__name__)
         CORS(self.app, resources=[r'/test_exposed', r'/test_other_exposed'],
              origins=['http://foo.com', 'http://bar.com'])
 
         @self.app.route('/test_unexposed')
-        def unexposed():
-            return 'Not exposed over CORS!'
+        def unexposed(request):
+            return text('Not exposed over CORS!')
 
         @self.app.route('/test_exposed')
-        def exposed1():
-            return 'Welcome!'
+        def exposed1(request):
+            return text('Welcome!')
 
         @self.app.route('/test_other_exposed')
-        def exposed2():
-            return 'Welcome!'
+        def exposed2(request):
+            return text('Welcome!')
 
     def test_exposed(self):
         for resp in self.iter_responses('/test_exposed', origin='http://foo.com'):
-            self.assertEqual(resp.status_code, 200)
-            self.assertEqual(resp.headers.get(ACL_ORIGIN),'http://foo.com')
+            self.assertEqual(resp.status, 200)
+            self.assertEqual(resp.headers.get(ACL_ORIGIN), 'http://foo.com')
 
     def test_other_exposed(self):
         for resp in self.iter_responses('/test_other_exposed', origin='http://bar.com'):
-            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status, 200)
             self.assertEqual(resp.headers.get(ACL_ORIGIN), 'http://bar.com')
 
     def test_unexposed(self):
         for resp in self.iter_responses('/test_unexposed', origin='http://foo.com'):
-            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status, 200)
             self.assertFalse(ACL_ORIGIN in resp.headers)
 
 
-class AppExtensionString(FlaskCorsTestCase):
+class AppExtensionString(SanicCorsTestCase):
     def setUp(self):
-        self.app = Flask(__name__)
+        self.app = Sanic(__name__)
         CORS(self.app, resources=r'/api/*',
              headers='Content-Type',
              expose_headers='X-Total-Count',
              origins='http://bar.com')
 
         @self.app.route('/api/v1/foo')
-        def exposed1():
-            return jsonify(success=True)
+        def exposed1(request):
+            return json({"success": True})
 
         @self.app.route('/api/v1/bar')
-        def exposed2():
-            return jsonify(success=True)
+        def exposed2(request):
+            return json({"success": True})
 
         @self.app.route('/api/v1/special')
-        @cross_origin(origins='http://foo.com')
-        def overridden():
-            return jsonify(special=True)
+        @cross_origin(self.app, origins='http://foo.com')
+        def overridden(request):
+            return json({"special": True})
 
         @self.app.route('/')
-        def index():
-            return 'Welcome'
+        def index(request):
+            return text('Welcome')
 
     def test_exposed(self):
         for path in '/api/v1/foo', '/api/v1/bar':
             for resp in self.iter_responses(path, origin='http://bar.com'):
-                self.assertEqual(resp.status_code, 200)
+                self.assertEqual(resp.status, 200)
                 self.assertEqual(resp.headers.get(ACL_ORIGIN), 'http://bar.com')
                 self.assertEqual(resp.headers.get(ACL_EXPOSE_HEADERS),
                                  'X-Total-Count')
             for resp in self.iter_responses(path, origin='http://foo.com'):
-                self.assertEqual(resp.status_code, 200)
+                self.assertEqual(resp.status, 200)
                 self.assertFalse(ACL_ORIGIN in resp.headers)
                 self.assertFalse(ACL_EXPOSE_HEADERS in resp.headers)
 
     def test_unexposed(self):
         for resp in self.iter_responses('/', origin='http://bar.com'):
-            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status, 200)
             self.assertFalse(ACL_ORIGIN in resp.headers)
             self.assertFalse(ACL_EXPOSE_HEADERS in resp.headers)
 
     def test_override(self):
         for resp in self.iter_responses('/api/v1/special', origin='http://foo.com'):
-            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status, 200)
             self.assertEqual(resp.headers.get(ACL_ORIGIN), 'http://foo.com')
 
             self.assertFalse(ACL_EXPOSE_HEADERS in resp.headers)
 
         for resp in self.iter_responses('/api/v1/special', origin='http://bar.com'):
-            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status, 200)
             self.assertFalse(ACL_ORIGIN in resp.headers)
             self.assertFalse(ACL_EXPOSE_HEADERS in resp.headers)
 
 
-class AppExtensionError(FlaskCorsTestCase):
+class AppExtensionError(SanicCorsTestCase):
     def test_value_error(self):
         try:
-            app = Flask(__name__)
+            app = Sanic(__name__)
             CORS(app, resources=5)
             self.assertTrue(False, "Should've raised a value error")
         except ValueError:
             pass
 
 
-class AppExtensionDefault(FlaskCorsTestCase):
+class AppExtensionDefault(SanicCorsTestCase):
     def test_default(self):
         '''
             By default match all.
         '''
 
-        self.app = Flask(__name__)
+        self.app = Sanic(__name__)
         CORS(self.app)
 
         @self.app.route('/')
-        def index():
-            return 'Welcome'
+        def index(request):
+            return text('Welcome')
 
         for resp in self.iter_responses('/', origin='http://foo.com'):
-            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status, 200)
             self.assertTrue(ACL_ORIGIN in resp.headers)
 
 
-class AppExtensionExampleApp(FlaskCorsTestCase):
+class AppExtensionExampleApp(SanicCorsTestCase):
     def setUp(self):
-        self.app = Flask(__name__)
+        self.app = Sanic(__name__)
         CORS(self.app, resources={
             r'/api/*': {'origins': ['http://blah.com', 'http://foo.bar']}
         })
 
         @self.app.route('/')
-        def index():
-            return ''
+        def index(request):
+            return text('')
 
         @self.app.route('/api/foo')
-        def test_wildcard():
-            return ''
+        def test_wildcard(request):
+            return text('')
 
         @self.app.route('/api/')
-        def test_exact_match():
-            return ''
+        def test_exact_match(request):
+            return text('')
 
     def test_index(self):
         '''
@@ -331,23 +348,23 @@ class AppExtensionExampleApp(FlaskCorsTestCase):
                 self.assertEqual(origin, resp.headers.get(ACL_ORIGIN))
 
 
-class AppExtensionCompiledRegexp(FlaskCorsTestCase):
+class AppExtensionCompiledRegexp(SanicCorsTestCase):
     def test_compiled_regex(self):
         '''
             Ensure we do not error if the user sepcifies an bad regular
             expression.
         '''
         import re
-        self.app = Flask(__name__)
+        self.app = Sanic(__name__)
         CORS(self.app, resources=re.compile('/api/.*'))
 
         @self.app.route('/')
-        def index():
-            return 'Welcome'
+        def index(request):
+            return text('Welcome')
 
         @self.app.route('/api/v1')
-        def example():
-            return 'Welcome'
+        def example(request):
+            return text('Welcome')
 
         for resp in self.iter_responses('/'):
             self.assertFalse(ACL_ORIGIN in resp.headers)
@@ -356,22 +373,22 @@ class AppExtensionCompiledRegexp(FlaskCorsTestCase):
             self.assertTrue(ACL_ORIGIN in resp.headers)
 
 
-class AppExtensionBadRegexp(FlaskCorsTestCase):
+class AppExtensionBadRegexp(SanicCorsTestCase):
     def test_value_error(self):
         '''
             Ensure we do not error if the user sepcifies an bad regular
             expression.
         '''
 
-        self.app = Flask(__name__)
+        self.app = Sanic(__name__)
         CORS(self.app, resources="[")
 
         @self.app.route('/')
-        def index():
-            return 'Welcome'
+        def index(request):
+            return text('Welcome')
 
         for resp in self.iter_responses('/'):
-            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status, 200)
 
 
 if __name__ == "__main__":

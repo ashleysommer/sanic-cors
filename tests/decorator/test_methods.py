@@ -2,33 +2,33 @@
 """
     test
     ~~~~
-    Flask-CORS is a simple extension to Flask allowing you to support cross
+    Sanic-CORS is a simple extension to Sanic allowing you to support cross
     origin resource sharing (CORS) using a simple decorator.
 
-    :copyright: (c) 2016 by Cory Dolphin.
+    :copyright: (c) 2017 by Cory Dolphin.
     :license: MIT, see LICENSE for more details.
 """
 
-from ..base_test import FlaskCorsTestCase
-from flask import Flask
+from ..base_test import SanicCorsTestCase
+from sanic import Sanic
+from sanic.response import text
+from sanic_cors import *
+from sanic_cors.core import *
 
-from flask_cors import *
-from flask_cors.core import *
 
-
-class MethodsCase(FlaskCorsTestCase):
+class MethodsCase(SanicCorsTestCase):
     def setUp(self):
-        self.app = Flask(__name__)
+        self.app = Sanic(__name__)
 
         @self.app.route('/defaults')
-        @cross_origin()
-        def defaults():
-            return 'Should only return headers on pre-flight OPTIONS request'
+        @cross_origin(self.app)
+        def defaults(request):
+            return text('Should only return headers on pre-flight OPTIONS request')
 
         @self.app.route('/test_methods_defined')
-        @cross_origin(methods=['POST'])
-        def test_get():
-            return 'Only allow POST'
+        @cross_origin(self.app, methods=['POST'])
+        def test_get(request):
+            return text('Only allow POST')
 
     def test_defaults(self):
         ''' Access-Control-Allow-Methods headers should only be returned

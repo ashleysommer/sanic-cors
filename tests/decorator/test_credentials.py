@@ -2,38 +2,39 @@
 """
     test
     ~~~~
-    Flask-CORS is a simple extension to Flask allowing you to support cross
+    Sanic-CORS is a simple extension to Sanic allowing you to support cross
     origin resource sharing (CORS) using a simple decorator.
 
-    :copyright: (c) 2016 by Cory Dolphin.
+    :copyright: (c) 2017 by Cory Dolphin.
     :license: MIT, see LICENSE for more details.
 """
 
-from ..base_test import FlaskCorsTestCase
-from flask import Flask
+from ..base_test import SanicCorsTestCase
+from sanic import Sanic
+from sanic.response import text
 
-from flask_cors import *
-from flask_cors.core import *
+from sanic_cors import *
+from sanic_cors.core import *
 
 
-class SupportsCredentialsCase(FlaskCorsTestCase):
+class SupportsCredentialsCase(SanicCorsTestCase):
     def setUp(self):
-        self.app = Flask(__name__)
+        self.app = Sanic(__name__)
 
         @self.app.route('/test_credentials_supported')
-        @cross_origin(supports_credentials=True)
-        def test_credentials_supported():
-            return 'Credentials!'
+        @cross_origin(self.app, supports_credentials=True)
+        def test_credentials_supported(request):
+            return text('Credentials!')
 
         @self.app.route('/test_credentials_unsupported')
-        @cross_origin(supports_credentials=False)
-        def test_credentials_unsupported():
-            return 'Credentials!'
+        @cross_origin(self.app, supports_credentials=False)
+        def test_credentials_unsupported(request):
+            return text('Credentials!')
 
         @self.app.route('/test_default')
-        @cross_origin()
-        def test_default():
-            return 'Open!'
+        @cross_origin(self.app)
+        def test_default(request):
+            return text('Open!')
 
     def test_credentials_supported(self):
         ''' The specified route should return the

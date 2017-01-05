@@ -2,32 +2,32 @@
 """
     setup
     ~~~~
-    Flask-CORS is a simple extension to Flask allowing you to support cross
+    Sanic-CORS is a simple extension to Sanic allowing you to support cross
     origin resource sharing (CORS) using a simple decorator.
 
-    :copyright: (c) 2016 by Cory Dolphin.
+    :copyright: (c) 2017 by Cory Dolphin.
     :license: MIT, see LICENSE for more details.
 """
 
 from setuptools import setup
 from os.path import join, dirname
 
-with open(join(dirname(__file__), 'flask_cors/version.py'), 'r') as f:
+with open(join(dirname(__file__), 'sanic_cors/version.py'), 'r') as f:
     exec(f.read())
 
 with open (join(dirname(__file__), 'requirements.txt'), 'r') as f:
     install_requires = f.read().split("\n")
 
 setup(
-    name='Flask-Cors',
+    name='Sanic-Cors',
     version=__version__,
-    url='https://github.com/corydolphin/flask-cors',
+    url='https://github.com/ashleysommer/sanic-cors',
     license='MIT',
     author='Cory Dolphin',
     author_email='corydolphin@gmail.com',
-    description="A Flask extension adding a decorator for CORS support",
+    description="A Sanic extension adding a decorator for CORS support",
     long_description=open('README.rst').read(),
-    packages=['flask_cors'],
+    packages=['sanic_cors'],
     zip_safe=False,
     include_package_data=True,
     platforms='any',
@@ -42,8 +42,6 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',

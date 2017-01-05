@@ -3,31 +3,34 @@
     test
     ~~~~
 
-    Flask-Cors tests module
+    Sanic-Cors tests module
 """
 
-from ..base_test import FlaskCorsTestCase
-from flask import Flask, Response
+from ..base_test import SanicCorsTestCase
+from sanic import Sanic
+from sanic.response import HTTPResponse
+from multidict import CIMultiDict
 
-from flask_cors import *
-from flask_cors.core import *
+from sanic_cors import *
+from sanic_cors.core import *
 
 
-class AllowsMultipleHeaderEntries(FlaskCorsTestCase):
+class AllowsMultipleHeaderEntries(SanicCorsTestCase):
     def setUp(self):
-        self.app = Flask(__name__)
+        self.app = Sanic(__name__)
 
         @self.app.route('/test_multiple_set_cookie_headers')
-        @cross_origin()
-        def test_multiple_set_cookie_headers():
-            resp = Response("Foo bar baz")
+        @cross_origin(self.app)
+        def test_multiple_set_cookie_headers(request):
+            resp = HTTPResponse(body="Foo bar baz")
+            resp.headers = CIMultiDict()
             resp.headers.add('set-cookie', 'foo')
             resp.headers.add('set-cookie', 'bar')
             return resp
 
     def test_multiple_set_cookie_headers(self):
         resp = self.get('/test_multiple_set_cookie_headers')
-        self.assertEqual(len(resp.headers.getlist('set-cookie')), 2)
+        self.assertEqual(len(resp.headers.getall('set-cookie')), 2)
 
 if __name__ == "__main__":
     unittest.main()

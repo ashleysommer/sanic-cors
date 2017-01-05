@@ -2,13 +2,13 @@
 """
     extension
     ~~~~
-    Flask-CORS is a simple extension to Flask allowing you to support cross
+    Sanic-CORS is a simple extension to Sanic allowing you to support cross
     origin resource sharing (CORS) using a simple decorator.
 
-    :copyright: (c) 2016 by Cory Dolphin.
+    :copyright: (c) 2017 by Cory Dolphin.
     :license: MIT, see LICENSE for more details.
 """
-from flask import request
+from sanic import Sanic, request, response
 from .core import *
 
 LOG = logging.getLogger(__name__)
@@ -129,6 +129,11 @@ class CORS(object):
             self.init_app(app, **kwargs)
 
     def init_app(self, app, **kwargs):
+        """
+        :param app: Sanic
+        :param kwargs:
+        :return:
+        """
         # The resources and options may be specified in the App Config, the CORS constructor
         # or the kwargs to the call to init_app.
         options = get_cors_options(app, self._options, kwargs)
@@ -150,37 +155,38 @@ class CORS(object):
         resources_human = dict([(get_regexp_pattern(pattern), opts) for (pattern,opts) in resources])
         LOG.debug("Configuring CORS with resources: %s", resources_human)
 
-        cors_after_request = make_after_request_function(resources)
-        app.after_request(cors_after_request)
+        cors_response_middleware = make_cores_response_middleware_function(resources)
+        app.middleware('response')(cors_response_middleware)
 
         # Wrap exception handlers with cross_origin
         # These error handlers will still respect the behavior of the route
-        if options.get('intercept_exceptions', True):
-            def _after_request_decorator(f):
-                def wrapped_function(*args, **kwargs):
-                    return cors_after_request(app.make_response(f(*args, **kwargs)))
-                return wrapped_function
+        #TODO: Fix this for Sanic
+        # if options.get('intercept_exceptions', True):
+        #     def _after_request_decorator(f):
+        #         def wrapped_function(*args, **kwargs):
+        #             return cors_response_middleware(app.make_response(f(*args, **kwargs)))
+        #         return wrapped_function
+        #
+        #     if hasattr(app, 'handle_exception'):
+        #         app.handle_exception = _after_request_decorator(
+        #             app.handle_exception)
+        #         app.handle_user_exception = _after_request_decorator(
+        #             app.handle_user_exception)
 
-            if hasattr(app, 'handle_exception'):
-                app.handle_exception = _after_request_decorator(
-                    app.handle_exception)
-                app.handle_user_exception = _after_request_decorator(
-                    app.handle_user_exception)
-
-def make_after_request_function(resources):
-    def cors_after_request(resp):
+def make_cores_response_middleware_function(resources):
+    async def cors_response_middleware(req, resp):
         # If CORS headers are set in a view decorator, pass
         if resp.headers.get(ACL_ORIGIN):
             LOG.debug('CORS have been already evaluated, skipping')
             return resp
 
         for res_regex, res_options in resources:
-            if try_match(request.path, res_regex):
+            if try_match(req.url, res_regex):
                 LOG.debug("Request to '%s' matches CORS resource '%s'. Using options: %s",
-                      request.path, get_regexp_pattern(res_regex), res_options)
-                set_cors_headers(resp, res_options)
+                      req.url, get_regexp_pattern(res_regex), res_options)
+                set_cors_headers(req, resp, res_options)
                 break
         else:
             LOG.debug('No CORS rule matches')
         return resp
-    return cors_after_request
+    return cors_response_middleware

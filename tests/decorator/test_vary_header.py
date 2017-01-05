@@ -2,44 +2,44 @@
 """
     test
     ~~~~
-    Flask-CORS is a simple extension to Flask allowing you to support cross
+    Sanic-CORS is a simple extension to Sanic allowing you to support cross
     origin resource sharing (CORS) using a simple decorator.
 
-    :copyright: (c) 2016 by Cory Dolphin.
+    :copyright: (c) 2017 by Cory Dolphin.
     :license: MIT, see LICENSE for more details.
 """
 
-from ..base_test import FlaskCorsTestCase
-from flask import Flask, Response
+from ..base_test import SanicCorsTestCase
+from sanic import Sanic
+from sanic.response import HTTPResponse, text
 
-from flask_cors import *
-from flask_cors.core import *
+from sanic_cors import *
+from sanic_cors.core import *
 
 
-class VaryHeaderTestCase(FlaskCorsTestCase):
+class VaryHeaderTestCase(SanicCorsTestCase):
     def setUp(self):
-        self.app = Flask(__name__)
+        self.app = Sanic(__name__)
 
         @self.app.route('/')
-        @cross_origin()
-        def wildcard():
-            return 'Welcome!'
+        @cross_origin(self.app)
+        def wildcard(request):
+            return text('Welcome!')
 
         @self.app.route('/test_consistent_origin')
-        @cross_origin(origins='http://foo.com')
-        def test_consistent():
-            return 'Welcome!'
+        @cross_origin(self.app, origins='http://foo.com')
+        def test_consistent(request):
+            return text('Welcome!')
 
         @self.app.route('/test_vary')
-        @cross_origin(origins=["http://foo.com", "http://bar.com"])
-        def test_vary():
-            return 'Welcome!'
+        @cross_origin(self.app, origins=["http://foo.com", "http://bar.com"])
+        def test_vary(request):
+            return text('Welcome!')
 
         @self.app.route('/test_existing_vary_headers')
-        @cross_origin(origins=["http://foo.com", "http://bar.com"])
-        def test_existing_vary_headers():
-            return Response('', status=200,
-                            headers={'Vary': 'Accept-Encoding'})
+        @cross_origin(self.app, origins=["http://foo.com", "http://bar.com"])
+        def test_existing_vary_headers(request):
+            return HTTPResponse('', status=200, headers=CIMultiDict({'Vary': 'Accept-Encoding'}))
 
     def test_default(self):
         '''
@@ -75,12 +75,12 @@ class VaryHeaderTestCase(FlaskCorsTestCase):
 
     def test_consistent_origin_concat(self):
         '''
-            If Flask-Cors adds a Vary header and there is already a Vary
+            If Sanic-Cors adds a Vary header and there is already a Vary
             header set, the headers should be combined and comma-separated.
         '''
 
         resp = self.get('/test_existing_vary_headers', origin="http://foo.com")
-        self.assertEqual(set(resp.headers.getlist('Vary')),
+        self.assertEqual(set(resp.headers.getall('Vary')),
                          set(['Origin', 'Accept-Encoding']))
 
 if __name__ == "__main__":

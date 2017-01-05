@@ -3,21 +3,20 @@
     decorator
     ~~~~
     This unit exposes a single decorator which should be used to wrap a
-    Flask route with. It accepts all parameters and options as
+    Sanic route with. It accepts all parameters and options as
     the CORS extension.
 
-    :copyright: (c) 2016 by Cory Dolphin.
+    :copyright: (c) 2017 by Cory Dolphin.
     :license: MIT, see LICENSE for more details.
 """
 from functools import update_wrapper
-from flask import make_response, request, current_app
 from .core import *
 
 LOG = logging.getLogger(__name__)
 
-def cross_origin(*args, **kwargs):
+def cross_origin(app, *args, **kwargs):
     """
-    This function is the decorator which is used to wrap a Flask route with.
+    This function is the decorator which is used to wrap a Sanic route with.
     In the simplest case, simply use the default parameters to allow all
     origins in what is the most permissive configuration. If this method
     modifies state or performs authentication which may be brute-forced, you
@@ -93,8 +92,8 @@ def cross_origin(*args, **kwargs):
     :type vary_header: bool
 
     :param automatic_options:
-        Only applies to the `cross_origin` decorator. If True, Flask-CORS will
-        override Flask's default OPTIONS handling to return CORS headers for
+        Only applies to the `cross_origin` decorator. If True, Sanic-CORS will
+        override Sanic's default OPTIONS handling to return CORS headers for
         OPTIONS requests.
 
         Default : True
@@ -106,29 +105,34 @@ def cross_origin(*args, **kwargs):
     def decorator(f):
         LOG.debug("Enabling %s for cross_origin using options:%s", f, _options)
 
-        # If True, intercept OPTIONS requests by modifying the view function,
-        # replicating Flask's default behavior, and wrapping the response with
-        # CORS headers.
-        #
-        # If f.provide_automatic_options is unset or True, Flask's route
-        # decorator (which is actually wraps the function object we return)
-        # intercepts OPTIONS handling, and requests will not have CORS headers
-        if _options.get('automatic_options', True):
-            f.required_methods = getattr(f, 'required_methods', set())
-            f.required_methods.add('OPTIONS')
-            f.provide_automatic_options = False
+        # Sanic does not have the same automatic OPTIONS handling that Sanic does
+        # And Sanic does not allow other middleware to alter the allowed methods on a route
+        # So this chunk cannot work the same as it does in Sanic.
 
-        def wrapped_function(*args, **kwargs):
-            # Handle setting of Flask-Cors parameters
-            options = get_cors_options(current_app, _options)
+        # # If True, intercept OPTIONS requests by modifying the view function,
+        # # replicating Sanic's default behavior, and wrapping the response with
+        # # CORS headers.
+        # #
+        # # If f.provide_automatic_options is unset or True, Sanic's route
+        # # decorator (which is actually wraps the function object we return)
+        # # intercepts OPTIONS handling, and requests will not have CORS headers
+        # if _options.get('automatic_options', True):
+        #     f.required_methods = getattr(f, 'required_methods', set())
+        #     f.required_methods.add('OPTIONS')
+        #     f.provide_automatic_options = False
 
-            if options.get('automatic_options') and request.method == 'OPTIONS':
-                resp = current_app.make_default_options_response()
+
+        def wrapped_function(req, *args, **kwargs):
+            # Handle setting of Sanic-Cors parameters
+            options = get_cors_options(app, _options)
+
+            if options.get('automatic_options') and req.method == 'OPTIONS':
+                resp = response.HTTPResponse()
             else:
-                resp = make_response(f(*args, **kwargs))
+                resp = f(req, *args, **kwargs)
 
-            set_cors_headers(resp, options)
-            setattr(resp, FLASK_CORS_EVALUATED, True)
+            set_cors_headers(req, resp, options)
+            resp.headers.add(SANIC_CORS_EVALUATED, "1")
             return resp
 
         return update_wrapper(wrapped_function, f)

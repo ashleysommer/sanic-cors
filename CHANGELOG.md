@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.1.0
+Initial release of Sanic-Cors, ported to Sanic from Flask-Cors v3.0.2
+
+# Flask-Cors Change Log
+
 ## 3.0.2
 Fixes Issue #187: regression whereby header (and domain) matching was incorrectly case sensitive. Now it is not, making the behavior identical to 2.X and 1.X.
 
@@ -11,12 +16,12 @@ Fixes Issue #183: regression whereby regular expressions for origins with an "?"
 This release is largely a number of small bug fixes and improvements, along with a default change in behavior, which is technically a breaking change.
 
 **Breaking Change**
-We added an always_send option, enabled by default, which makes Flask-CORS inject headers even if the request did not have an 'Origin' header. Because this makes debugging far easier, and has very little downside, it has also been set as the default, making it technically a breaking change. If this actually broke something for you, please let me know, and I'll help you work around it. (#156) c7a1ecdad375a796155da6aca6a1f750337175f3
+We added an always_send option, enabled by default, which makes Sanic-CORS inject headers even if the request did not have an 'Origin' header. Because this makes debugging far easier, and has very little downside, it has also been set as the default, making it technically a breaking change. If this actually broke something for you, please let me know, and I'll help you work around it. (#156) c7a1ecdad375a796155da6aca6a1f750337175f3
 
 
 Other improvements:
 * Adds building of universal wheels (#175) 4674c3d54260f8897bd18e5502509363dcd0d0da
-* Makes Flask-CORS compatible with OAuthLib's custom header class ... (#172) aaaf904845997a3b684bc6677bdfc91656a85a04
+* Makes Sanic-CORS compatible with OAuthLib's custom header class ... (#172) aaaf904845997a3b684bc6677bdfc91656a85a04
 * Fixes incorrect substring matches when strings are used as origins or headers (#165) 9cd3f295bd6b0ba87cc5f2afaca01b91ff43e72c
 * Fixes logging when unknown options are supplied (#152) bddb13ca6636c5d559ec67a95309c9607a3fcaba
 
@@ -68,7 +73,7 @@ modules. More work to decompose these tests is needed.
 
 ## 1.10.3
 Release Version 1.10.3
-* Adds logging to Flask-Cors so it is easy to see what is going on and why
+* Adds logging to Sanic-Cors so it is easy to see what is going on and why
 * Adds support for compiled regexes as origins
 
 Big thanks to @michalbachowski and @digitizdat!
@@ -82,8 +87,8 @@ Thanks @maximium for the bug report and implementation!
 
 ## 1.10.1
 This is a bug fix release, fixing:
-Incorrect handling of resources and intercept_exceptions App Config options https://github.com/wcdolphin/flask-cors/issues/84
-Issue with functools.partial in 1.10.0 using Python 2.7.9 https://github.com/wcdolphin/flask-cors/issues/83
+Incorrect handling of resources and intercept_exceptions App Config options https://github.com/wcdolphin/sanic-cors/issues/84
+Issue with functools.partial in 1.10.0 using Python 2.7.9 https://github.com/wcdolphin/sanic-cors/issues/83
 
 Shoutout to @diiq and @joonathan for reporting these issues!
 
@@ -98,7 +103,7 @@ Shoutout to @diiq and @joonathan for reporting these issues!
 * Fixes test import errors on Python 3.4.1 (Thanks @wking )
 
 ## 1.8.1
-Thanks to @wking's work in PR https://github.com/wcdolphin/flask-cors/pull/71 `python setup.py test` will now work.
+Thanks to @wking's work in PR https://github.com/wcdolphin/sanic-cors/pull/71 `python setup.py test` will now work.
 
 
 ## v1.8.0
@@ -106,7 +111,7 @@ Adds support for regular expressions in the list of origins.
 
 This allows subdomain wildcarding and should be fully backwards compatible.
 
-Credit to @marcoqu for opening https://github.com/wcdolphin/flask-cors/issues/54 which inspired this work
+Credit to @marcoqu for opening https://github.com/wcdolphin/sanic-cors/issues/54 which inspired this work
 
 ## Earlier
 Prior version numbers were not kept track of in this system.
