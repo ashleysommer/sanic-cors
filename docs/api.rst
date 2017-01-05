@@ -44,7 +44,7 @@ cross origins, simply set the `supports_credentials` option to `True`. E.G.
     CORS(app, supports_credentials=True)
 
     @app.route("/")
-    def helloWorld(request):
+    def hello_world(request):
       return text("Hello, %s" % session['username'])
 
 Using `CORS` with Blueprints

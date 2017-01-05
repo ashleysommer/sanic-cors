@@ -5,7 +5,7 @@ Sanic-CORS
 |License|
 
 A Sanic extension for handling Cross Origin Resource Sharing (CORS),
-making cross-origin AJAX possible.
+making cross-origin AJAX possible. Based on flask-cors by Cory Dolphin.
 
 This package has a simple philosophy, when you want to enable CORS, you
 wish to enable it for all use cases on a domain. This means no mucking
@@ -48,7 +48,7 @@ full list of options in the `documentation <http://sanic-cors.corydolphin.com/en
     CORS(app)
 
     @app.route("/")
-    def helloWorld(request):
+    def hello_world(request):
       return text("Hello, cross-origin-world!")
 
 Resource specific CORS
@@ -80,7 +80,7 @@ full list of options in the `decorator documentation <http://sanic-cors.corydolp
 
     @app.route("/")
     @cross_origin(app)
-    def helloWorld(request):
+    def hello_world(request):
       return text("Hello, cross-origin-world!")
 
 Documentation

@@ -35,7 +35,7 @@ CORS(app, resources=r'/api/*')
 
 
 @app.route("/")
-def helloWorld(request):
+def hello_world(request):
     '''
         Since the path '/' does not match the regular expression r'/api/*',
         this route does not have CORS headers set.
