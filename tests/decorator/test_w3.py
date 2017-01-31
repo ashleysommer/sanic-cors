@@ -20,7 +20,7 @@ class OriginsW3TestCase(SanicCorsTestCase):
     def setUp(self):
         self.app = Sanic(__name__)
 
-        @self.app.route('/')
+        @self.app.route('/', methods=['GET', 'HEAD', 'OPTIONS'])
         @cross_origin(self.app, origins='*', send_wildcard=False, always_send=False)
         def allowOrigins(request):
             ''' This sets up sanic-cors to echo the request's `Origin` header,
@@ -31,7 +31,7 @@ class OriginsW3TestCase(SanicCorsTestCase):
             '''
             return text('Welcome!')
 
-        @self.app.route('/default-origins')
+        @self.app.route('/default-origins', methods=['GET', 'HEAD', 'OPTIONS'])
         @cross_origin(self.app, send_wildcard=False, always_send=False)
         def noWildcard(request):
             ''' With the default origins configuration, send_wildcard should

@@ -12,26 +12,26 @@
 from ..base_test import SanicCorsTestCase
 from sanic import Sanic
 from sanic.response import HTTPResponse, text
+from sanic.server import CIDict
 
 from sanic_cors import *
-from sanic_cors.core import *
 
 
 class VaryHeaderTestCase(SanicCorsTestCase):
     def setUp(self):
         self.app = Sanic(__name__)
 
-        @self.app.route('/')
+        @self.app.route('/', methods=['GET', 'HEAD', 'OPTIONS'])
         @cross_origin(self.app)
         def wildcard(request):
             return text('Welcome!')
 
-        @self.app.route('/test_consistent_origin')
+        @self.app.route('/test_consistent_origin', methods=['GET', 'HEAD', 'OPTIONS'])
         @cross_origin(self.app, origins='http://foo.com')
         def test_consistent(request):
             return text('Welcome!')
 
-        @self.app.route('/test_vary')
+        @self.app.route('/test_vary', methods=['GET', 'HEAD', 'OPTIONS'])
         @cross_origin(self.app, origins=["http://foo.com", "http://bar.com"])
         def test_vary(request):
             return text('Welcome!')
@@ -39,7 +39,7 @@ class VaryHeaderTestCase(SanicCorsTestCase):
         @self.app.route('/test_existing_vary_headers')
         @cross_origin(self.app, origins=["http://foo.com", "http://bar.com"])
         def test_existing_vary_headers(request):
-            return HTTPResponse('', status=200, headers=CIMultiDict({'Vary': 'Accept-Encoding'}))
+            return HTTPResponse('', status=200, headers=CIDict({'Vary': 'Accept-Encoding'}))
 
     def test_default(self):
         '''

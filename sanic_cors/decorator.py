@@ -132,7 +132,7 @@ def cross_origin(app, *args, **kwargs):
                 resp = f(req, *args, **kwargs)
 
             set_cors_headers(req, resp, options)
-            resp.headers.add(SANIC_CORS_EVALUATED, "1")
+            resp.headers[SANIC_CORS_EVALUATED] = "1"
             return resp
 
         return update_wrapper(wrapped_function, f)

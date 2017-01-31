@@ -9,7 +9,7 @@ env:
 - SANIC=0.1.9
 
 install:
-  - pip install -U setuptools pep8 coverage docutils pygments sanic==$SANIC multidict aiohttp
+  - pip install -U setuptools pep8 coverage docutils pygments sanic==$SANIC aiohttp
 
 script:
   - coverage erase

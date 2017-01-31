@@ -22,7 +22,7 @@ class ExposeHeadersTestCase(SanicCorsTestCase):
         def test_default(request):
             return text('Welcome!')
 
-        @self.app.route('/test_override')
+        @self.app.route('/test_override', methods=['GET', 'HEAD', 'OPTIONS'])
         @cross_origin(self.app, expose_headers=["X-My-Custom-Header", "X-Another-Custom-Header"])
         def test_override(request):
             return text('Welcome!')

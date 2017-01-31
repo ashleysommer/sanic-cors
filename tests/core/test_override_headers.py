@@ -19,7 +19,7 @@ class ResponseHeadersOverrideTestCaseIntegration(SanicCorsTestCase):
         self.app = Sanic(__name__)
         CORS(self.app)
 
-        @self.app.route('/')
+        @self.app.route('/', methods=['GET', 'HEAD', 'OPTIONS'])
         def index(request):
             return HTTPResponse(body='Welcome', headers={"custom": "dictionary"})
 

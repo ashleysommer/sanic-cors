@@ -12,7 +12,7 @@ import logging
 import collections
 from datetime import timedelta
 from sanic import request, response
-from multidict import CIMultiDict
+from sanic.server import CIDict
 
 LOG = logging.getLogger(__name__)
 
@@ -165,13 +165,14 @@ def get_allow_headers(options, acl_request_headers):
 
 def get_cors_headers(options, request_headers, request_method):
     origins_to_set = get_cors_origins(options, request_headers.get('Origin'))
-    headers = CIMultiDict()
+    headers = CIDict()
 
     if not origins_to_set:  # CORS is not enabled for this route
         return headers
 
     for origin in origins_to_set:
-        headers.add(ACL_ORIGIN, origin)
+        #  TODO, with CIDict, with will only allow one origin
+        headers[ACL_ORIGIN] = origin
 
     headers[ACL_EXPOSE_HEADERS] = options.get('expose_headers')
 
@@ -206,9 +207,9 @@ def get_cors_headers(options, request_headers, request_method):
         elif (len(options.get('origins')) > 1 or
               len(origins_to_set) > 1 or
               any(map(probably_regex, options.get('origins')))):
-            headers.add('Vary', 'Origin')
+            headers['Vary'] = 'Origin'
 
-    return CIMultiDict((k, v) for k, v in headers.items() if v)
+    return CIDict((k, v) for k, v in headers.items() if v)
 
 
 def set_cors_headers(req, resp, options):
@@ -221,23 +222,23 @@ def set_cors_headers(req, resp, options):
     """
 
     # If CORS has already been evaluated via the decorator, skip
-    if isinstance(resp.headers, (dict, CIMultiDict)) and SANIC_CORS_EVALUATED in resp.headers:
+    if isinstance(resp.headers, (dict, CIDict)) and SANIC_CORS_EVALUATED in resp.headers:
         LOG.debug('CORS have been already evaluated, skipping')
-        del resp.headers[SANIC_CORS_EVALUATED]
+        del resp.headers[str(SANIC_CORS_EVALUATED).casefold()]
         return resp
 
     # Some libraries, like OAuthlib, set resp.headers to non Multidict
     # objects (Werkzeug Headers work as well). This is a problem because
     # headers allow repeated values.
-    if not isinstance(resp.headers, CIMultiDict):
-        resp.headers = CIMultiDict(resp.headers)
+    if not isinstance(resp.headers, CIDict):
+        resp.headers = CIDict(resp.headers)
 
     headers_to_set = get_cors_headers(options, req.headers, req.method)
 
     LOG.debug('Settings CORS headers: %s', str(headers_to_set))
 
     for k, v in headers_to_set.items():
-        resp.headers.add(k, v)
+        resp.headers[k] = v
 
     return resp
 

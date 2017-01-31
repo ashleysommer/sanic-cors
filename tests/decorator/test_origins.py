@@ -22,7 +22,7 @@ class OriginsTestCase(SanicCorsTestCase):
     def setUp(self):
         self.app = Sanic(__name__)
 
-        @self.app.route('/')
+        @self.app.route('/', methods=['GET', 'HEAD', 'OPTIONS'])
         @cross_origin(self.app)
         def wildcard(request):
             return text('Welcome!')
@@ -37,7 +37,7 @@ class OriginsTestCase(SanicCorsTestCase):
         def test_always_send_no_wildcard(request):
             return text('Welcome!')
 
-        @self.app.route('/test_send_wildcard_with_origin')
+        @self.app.route('/test_send_wildcard_with_origin', methods=['GET', 'HEAD', 'OPTIONS'])
         @cross_origin(self.app, send_wildcard=True)
         def test_send_wildcard_with_origin(request):
             return text('Welcome!')
@@ -57,22 +57,22 @@ class OriginsTestCase(SanicCorsTestCase):
         def test_set(request):
             return text('Welcome!')
 
-        @self.app.route('/test_subdomain_regex')
+        @self.app.route('/test_subdomain_regex', methods=['GET', 'HEAD', 'OPTIONS'])
         @cross_origin(self.app, origins=r"http?://\w*\.?example\.com:?\d*/?.*")
         def test_subdomain_regex(request):
             return text('')
 
-        @self.app.route('/test_compiled_subdomain_regex')
+        @self.app.route('/test_compiled_subdomain_regex', methods=['GET', 'HEAD', 'OPTIONS'])
         @cross_origin(self.app, origins=re.compile(r"http?://\w*\.?example\.com:?\d*/?.*"))
         def test_compiled_subdomain_regex(request):
             return text('')
 
-        @self.app.route('/test_regex_list')
+        @self.app.route('/test_regex_list', methods=['GET', 'HEAD', 'OPTIONS'])
         @cross_origin(self.app, origins=[r".*.example.com", r".*.otherexample.com"])
         def test_regex_list(request):
             return text('')
 
-        @self.app.route('/test_regex_mixed_list')
+        @self.app.route('/test_regex_mixed_list', methods=['GET', 'HEAD', 'OPTIONS'])
         @cross_origin(self.app, origins=["http://example.com", r".*.otherexample.com"])
         def test_regex_mixed_list(request):
             return text('')
@@ -125,7 +125,7 @@ class OriginsTestCase(SanicCorsTestCase):
             Access-Control-Allow-Origin header should be echoed.
         '''
         resp = self.get('/test_list', origin='http://bar.com')
-        self.assertEqual(resp.headers.get(ACL_ORIGIN),'http://bar.com')
+        self.assertEqual(resp.headers.get(ACL_ORIGIN), 'http://bar.com')
 
     def test_string_serialized(self):
         ''' If there is an Origin header in the request,
@@ -145,7 +145,7 @@ class OriginsTestCase(SanicCorsTestCase):
         self.assertEqual(allowed, 'http://bar.com')
 
     def test_not_matching_origins(self):
-        for resp in self.iter_responses('/test_list',origin="http://bazz.com"):
+        for resp in self.iter_responses('/test_list', origin="http://bazz.com"):
             self.assertFalse(ACL_ORIGIN in resp.headers)
 
     def test_subdomain_regex(self):

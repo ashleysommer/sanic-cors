@@ -37,48 +37,48 @@ class AppExtensionRegexp(SanicCorsTestCase):
             r'/test_regex_mixed_list': {
                 'origins': ["http://example.com", r".*.otherexample.com"]
             },
-            r'/test_send_wildcard_with_origin' : {
-                'send_wildcard':True
+            r'/test_send_wildcard_with_origin': {
+                'send_wildcard': True
             },
             re.compile('/test_compiled_subdomain_\w*'): {
                 'origins': re.compile("http://example\d+.com")
             },
-            r'/test_defaults':{}
+            r'/test_defaults': {}
         })
 
-        @self.app.route('/test_defaults')
+        @self.app.route('/test_defaults', methods=['GET', 'HEAD', 'OPTIONS'])
         def wildcard(request):
             return text('Welcome!')
 
-        @self.app.route('/test_send_wildcard_with_origin')
+        @self.app.route('/test_send_wildcard_with_origin', methods=['GET', 'HEAD', 'OPTIONS'])
         def send_wildcard_with_origin(request):
             return text('Welcome!')
 
-        @self.app.route('/test_list')
+        @self.app.route('/test_list', methods=['GET', 'HEAD', 'OPTIONS'])
         def test_list(request):
             return text('Welcome!')
 
-        @self.app.route('/test_string')
+        @self.app.route('/test_string', methods=['GET', 'HEAD', 'OPTIONS'])
         def test_string(request):
             return text('Welcome!')
 
-        @self.app.route('/test_set')
+        @self.app.route('/test_set', methods=['GET', 'HEAD', 'OPTIONS'])
         def test_set(request):
             return text('Welcome!')
 
-        @self.app.route('/test_subdomain_regex')
+        @self.app.route('/test_subdomain_regex', methods=['GET', 'HEAD', 'OPTIONS'])
         def test_set(request):
             return text('Welcome!')
 
-        @self.app.route('/test_regex_list')
+        @self.app.route('/test_regex_list', methods=['GET', 'HEAD', 'OPTIONS'])
         def test_set(request):
             return text('Welcome!')
 
-        @self.app.route('/test_regex_mixed_list')
+        @self.app.route('/test_regex_mixed_list', methods=['GET', 'HEAD', 'OPTIONS'])
         def test_set(request):
             return text('Welcome!')
 
-        @self.app.route('/test_compiled_subdomain_regex')
+        @self.app.route('/test_compiled_subdomain_regex', methods=['GET', 'HEAD', 'OPTIONS'])
         def test_set(request):
             return text('Welcome!')
 
@@ -189,15 +189,15 @@ class AppExtensionList(SanicCorsTestCase):
         CORS(self.app, resources=[r'/test_exposed', r'/test_other_exposed'],
              origins=['http://foo.com', 'http://bar.com'])
 
-        @self.app.route('/test_unexposed')
+        @self.app.route('/test_unexposed', methods=['GET', 'HEAD', 'OPTIONS'])
         def unexposed(request):
             return text('Not exposed over CORS!')
 
-        @self.app.route('/test_exposed')
+        @self.app.route('/test_exposed', methods=['GET', 'HEAD', 'OPTIONS'])
         def exposed1(request):
             return text('Welcome!')
 
-        @self.app.route('/test_other_exposed')
+        @self.app.route('/test_other_exposed', methods=['GET', 'HEAD', 'OPTIONS'])
         def exposed2(request):
             return text('Welcome!')
 
@@ -225,20 +225,20 @@ class AppExtensionString(SanicCorsTestCase):
              expose_headers='X-Total-Count',
              origins='http://bar.com')
 
-        @self.app.route('/api/v1/foo')
+        @self.app.route('/api/v1/foo', methods=['GET', 'HEAD', 'OPTIONS'])
         def exposed1(request):
             return json({"success": True})
 
-        @self.app.route('/api/v1/bar')
+        @self.app.route('/api/v1/bar', methods=['GET', 'HEAD', 'OPTIONS'])
         def exposed2(request):
             return json({"success": True})
 
-        @self.app.route('/api/v1/special')
+        @self.app.route('/api/v1/special', methods=['GET', 'HEAD', 'OPTIONS'])
         @cross_origin(self.app, origins='http://foo.com')
         def overridden(request):
             return json({"special": True})
 
-        @self.app.route('/')
+        @self.app.route('/', methods=['GET', 'HEAD', 'OPTIONS'])
         def index(request):
             return text('Welcome')
 
@@ -292,7 +292,7 @@ class AppExtensionDefault(SanicCorsTestCase):
         self.app = Sanic(__name__)
         CORS(self.app)
 
-        @self.app.route('/')
+        @self.app.route('/', methods=['GET', 'HEAD', 'OPTIONS'])
         def index(request):
             return text('Welcome')
 
@@ -308,15 +308,15 @@ class AppExtensionExampleApp(SanicCorsTestCase):
             r'/api/*': {'origins': ['http://blah.com', 'http://foo.bar']}
         })
 
-        @self.app.route('/')
+        @self.app.route('/', methods=['GET', 'HEAD', 'OPTIONS'])
         def index(request):
             return text('')
 
-        @self.app.route('/api/foo')
+        @self.app.route('/api/foo', methods=['GET', 'HEAD', 'OPTIONS'])
         def test_wildcard(request):
             return text('')
 
-        @self.app.route('/api/')
+        @self.app.route('/api/', methods=['GET', 'HEAD', 'OPTIONS'])
         def test_exact_match(request):
             return text('')
 
@@ -351,18 +351,18 @@ class AppExtensionExampleApp(SanicCorsTestCase):
 class AppExtensionCompiledRegexp(SanicCorsTestCase):
     def test_compiled_regex(self):
         '''
-            Ensure we do not error if the user sepcifies an bad regular
+            Ensure we do not error if the user specifies an compiled regular
             expression.
         '''
         import re
         self.app = Sanic(__name__)
         CORS(self.app, resources=re.compile('/api/.*'))
 
-        @self.app.route('/')
+        @self.app.route('/', methods=['GET', 'HEAD', 'OPTIONS'])
         def index(request):
             return text('Welcome')
 
-        @self.app.route('/api/v1')
+        @self.app.route('/api/v1', methods=['GET', 'HEAD', 'OPTIONS'])
         def example(request):
             return text('Welcome')
 
@@ -376,14 +376,14 @@ class AppExtensionCompiledRegexp(SanicCorsTestCase):
 class AppExtensionBadRegexp(SanicCorsTestCase):
     def test_value_error(self):
         '''
-            Ensure we do not error if the user sepcifies an bad regular
+            Ensure we do not error if the user specifies an bad regular
             expression.
         '''
 
         self.app = Sanic(__name__)
         CORS(self.app, resources="[")
 
-        @self.app.route('/')
+        @self.app.route('/', methods=['GET', 'HEAD', 'OPTIONS'])
         def index(request):
             return text('Welcome')
 

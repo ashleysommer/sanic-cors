@@ -27,12 +27,12 @@ class MaxAgeTestCase(SanicCorsTestCase):
         def defaults(request):
             return text('Should only return headers on OPTIONS')
 
-        @self.app.route('/test_string')
+        @self.app.route('/test_string', methods=['GET', 'OPTIONS'])
         @cross_origin(self.app, max_age=600)
         def test_string(request):
             return text('Open!')
 
-        @self.app.route('/test_time_delta')
+        @self.app.route('/test_time_delta', methods=['GET', 'OPTIONS'])
         @cross_origin(self.app, max_age=timedelta(minutes=10))
         def test_time_delta(request):
             return text('Open!')

@@ -20,12 +20,12 @@ class MethodsCase(SanicCorsTestCase):
     def setUp(self):
         self.app = Sanic(__name__)
 
-        @self.app.route('/defaults')
+        @self.app.route('/defaults', methods=['GET', 'POST', 'HEAD', 'OPTIONS'])
         @cross_origin(self.app)
         def defaults(request):
             return text('Should only return headers on pre-flight OPTIONS request')
 
-        @self.app.route('/test_methods_defined')
+        @self.app.route('/test_methods_defined', methods=['POST', 'OPTIONS'])
         @cross_origin(self.app, methods=['POST'])
         def test_get(request):
             return text('Only allow POST')

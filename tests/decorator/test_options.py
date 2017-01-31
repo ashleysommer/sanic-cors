@@ -20,7 +20,7 @@ class OptionsTestCase(SanicCorsTestCase):
     def setUp(self):
         self.app = Sanic(__name__)
 
-        @self.app.route('/test_default')
+        @self.app.route('/test_default', methods=['OPTIONS'])
         @cross_origin(self.app)
         def test_default(request):
             return text('Welcome!')
