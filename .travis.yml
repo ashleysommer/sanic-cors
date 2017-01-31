@@ -6,7 +6,7 @@ python:
   - '3.5'
 
 env:
-- SANIC=0.1.9
+- SANIC=0.3.0
 
 install:
   - pip install -U setuptools pep8 coverage docutils pygments sanic==$SANIC aiohttp
