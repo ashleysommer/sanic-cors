@@ -44,8 +44,8 @@ class SanicCorsTestCase(unittest.TestCase):
         headers = kwargs.pop('headers', {})
         if _origin:
             headers.update(Origin=_origin)
-        if not str(path).startswith("http") and not str(path).startswith("/"):
-            path = ''.join(['/', path])
+        #if not str(path).startswith("http") and not str(path).startswith("/"):
+        #    path = ''.join(['/', path])
 
         try:
             c = self.test_client
