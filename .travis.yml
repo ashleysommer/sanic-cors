@@ -3,28 +3,23 @@ cache:
 - pip
 language: python
 python:
-  - '3.5'
-
+- '3.5'
 env:
-- SANIC=0.3.0
-
+- SANIC=0.4.1
 install:
-  - pip install -U setuptools pep8 coverage docutils pygments sanic==$SANIC aiohttp
-
+- pip install -U setuptools pep8 coverage docutils pygments sanic==$SANIC aiohttp
 script:
-  - coverage erase
-  - nosetests --with-coverage --cover-package=sanic_cors
-  - python setup.py clean build install
-
+- coverage erase
+- nosetests --with-coverage --cover-package=sanic_cors
+- python setup.py clean build install
 after_success:
-  - pep8 sanic_cors.py
-
-#deploy:
-#  provider: pypi
-#  user: ashleysommer
-#  password: password
-#  distributions: "sdist bdist_wheel"
-#  on:
-#    tags: true
-#    repo: ashleysommer/sanic-cors
-#    condition: $TRAVIS_PYTHON_VERSION != *3.5* # Ensures we release a 3.5 wheel
+- pep8 sanic_cors.py
+deploy:
+  provider: pypi
+  user: ashleysommer
+  distributions: sdist bdist_wheel
+  on:
+    tags: true
+    repo: ashleysommer/sanic-cors
+  password:
+    secure: cnwEYQjhEx0BOP1tdFBeFnKHUpDfZWLKkXf7N36+AOOEjBgK72D03DCsKcCt1iZJPv7KcUIK84vZzmTPBmdvGyxJNTBTJRyPpPXw1TkokxFVwVutIrMCPJB6Nchd0ZLY8tarTNdEnR3y24AWfqP6EyD0Z4mRHHX9jwnNqxQi2aMsh2tVYMPk8IlfMSyxBM6R0rlh2Ahx5GWahuvHgmJBBovp9EED9vBHOUUIREI9rU0O2SPN1hxFXH5g6QFze3iaNKsxeXO02RfWSoK3dGCa5AYnwWeraX4nTCRA6t8l7mFKdwzjpUdklFm102StQGo4h+EqXsBEGVFhrwb/SSdPcwG/pdJsfiHBLeoPhb5amI1US68OBLVYz9m4p3fH/PSB6PjMER6WYc3dxtVjfSc8+8PSKwLeN3N5ucjZJ9OtcIiRt+yiOoh+HYfTpSCEeZpG6G+TnAhUD/WDFBTt8aQxjw2wTHdyY+D9+B8a5VHm2PvNr7tEUFW/JfpFSBM02pFc0I01Gvxn67sXDzx+6ccrtVCSs/QP8AfsYLTHu3tAYHE52appYPMQ+EkIHiQB7tKfVLr1FtvQNbJcN4q7OCS7v+R0lE08KcZ3COGK66jpKg9gORjrk6Uw7drGrW3fs1vB8cLXOeQAxz9NYJuhSl5FYww+0oGJ3QjzcK/ABxMVtB8=

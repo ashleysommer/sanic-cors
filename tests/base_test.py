@@ -5,7 +5,7 @@
     Sanic-CORS is a simple extension to Sanic allowing you to support cross
     origin resource sharing (CORS) using a simple decorator.
 
-    :copyright: (c) 2017 by Cory Dolphin.
+    :copyright: (c) 2017 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
 from sanic import Sanic
@@ -13,12 +13,11 @@ try:
     import unittest2 as unittest
 except ImportError:
     import unittest
-from sanic_cors import *
 from sanic_cors.core import *
-from sanic import utils
 
 
 class SanicCorsTestCase(unittest.TestCase):
+
     def shortDescription(self):
         """
         Get's the one liner description to be displayed.
@@ -47,8 +46,12 @@ class SanicCorsTestCase(unittest.TestCase):
             headers.update(Origin=_origin)
         if not str(path).startswith("http") and not str(path).startswith("/"):
             path = ''.join(['/', path])
-        request, response = utils.sanic_endpoint_test(self.app, method=verb, uri=path, *args, debug=True,
-                                                headers=headers, **kwargs)
+
+        try:
+            c = self.test_client
+        except AttributeError:
+            c = self.test_client = self.app.test_client
+        request, response = getattr(c, verb)(uri=path, debug=True, headers=headers, *args, **kwargs)
         return response
 
     def get(self, *args, **kwargs):
@@ -82,7 +85,7 @@ class SanicCorsTestCase(unittest.TestCase):
 
         kwargs['headers'].update({'Access-Control-Request-Method': method})
 
-        return self.options(path,**kwargs)
+        return self.options(path, **kwargs)
 
     def assertHasACLOrigin(self, resp, origin=None):
         if origin is None:

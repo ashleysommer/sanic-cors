@@ -5,13 +5,14 @@
     Sanic-CORS is a simple extension to Sanic allowing you to support cross
     origin resource sharing (CORS) using a simple decorator.
 
-    :copyright: (c) 2017 by Cory Dolphin.
+    :copyright: (c) 2017 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
 from sanic import Sanic, request, response
 from .core import *
 
 LOG = logging.getLogger(__name__)
+
 
 class CORS(object):
     """
@@ -173,6 +174,7 @@ class CORS(object):
         #         app.handle_user_exception = _after_request_decorator(
         #             app.handle_user_exception)
 
+
 def make_cors_response_middleware_function(resources):
     async def cors_response_middleware(req, resp):
         # If CORS headers are set in a view decorator, pass
@@ -183,7 +185,7 @@ def make_cors_response_middleware_function(resources):
         for res_regex, res_options in resources:
             if try_match(req.url, res_regex):
                 LOG.debug("Request to '%s' matches CORS resource '%s'. Using options: %s",
-                      req.url, get_regexp_pattern(res_regex), res_options)
+                          req.url, get_regexp_pattern(res_regex), res_options)
                 set_cors_headers(req, resp, res_options)
                 break
         else:

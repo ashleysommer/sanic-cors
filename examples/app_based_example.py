@@ -4,8 +4,8 @@ Sanic-Cors example
 This is a tiny Sanic Application demonstrating Sanic-Cors, making it simple
 to add cross origin support to your sanic app!
 
-:copyright: (c) 2017 by Cory Dolphin.
-:license:   MIT/X11, see LICENSE for more details.
+:copyright: (c) 2017 by Ashley Sommer (based on flask-cors by Cory Dolphin).
+:license: MIT/X11, see LICENSE for more details.
 """
 from sanic import Sanic
 from sanic.response import json, text
@@ -18,7 +18,6 @@ except ImportError:
     import os
     parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.sys.path.insert(0, parentdir)
-
     from sanic_cors import CORS
 
 

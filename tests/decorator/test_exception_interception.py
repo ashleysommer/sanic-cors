@@ -5,7 +5,7 @@
     Sanic-CORS is a simple extension to Sanic allowing you to support cross
     origin resource sharing (CORS) using a simple decorator.
 
-    :copyright: (c) 2017 by Cory Dolphin.
+    :copyright: (c) 2017 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
 from ..base_test import SanicCorsTestCase
@@ -128,12 +128,12 @@ class ExceptionInterceptionDefaultTestCase(SanicCorsTestCase):
         acl_paths = [
             '/test_acl_abort_404',
             '/test_acl_abort_500',
-            'test_acl_uncaught_exception_500'
+            '/test_acl_uncaught_exception_500'
         ]
         no_acl_paths = [
             '/test_no_acl_abort_404',
             '/test_no_acl_abort_500',
-            'test_no_acl_uncaught_exception_500'
+            '/test_no_acl_uncaught_exception_500'
         ]
 
         def get_with_origins(path):
@@ -184,8 +184,8 @@ class NoExceptionInterceptionTestCase(ExceptionInterceptionDefaultTestCase):
         no_acl_paths = [
             '/test_no_acl_abort_404',
             '/test_no_acl_abort_500',
-            'test_no_acl_uncaught_exception_500'
-            'test_acl_uncaught_exception_500'
+            '/test_no_acl_uncaught_exception_500'
+            '/test_acl_uncaught_exception_500'
         ]
         def get_with_origins(path):
             return self.get(path, origin='www.example.com')

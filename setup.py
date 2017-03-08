@@ -5,7 +5,7 @@
     Sanic-CORS is a simple extension to Sanic allowing you to support cross
     origin resource sharing (CORS) using a simple decorator.
 
-    :copyright: (c) 2017 by Cory Dolphin.
+    :copyright: (c) 2017 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
 
@@ -15,7 +15,7 @@ from os.path import join, dirname
 with open(join(dirname(__file__), 'sanic_cors/version.py'), 'r') as f:
     exec(f.read())
 
-with open (join(dirname(__file__), 'requirements.txt'), 'r') as f:
+with open(join(dirname(__file__), 'requirements.txt'), 'r') as f:
     install_requires = f.read().split("\n")
 
 setup(

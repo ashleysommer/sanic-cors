@@ -6,13 +6,14 @@
     Sanic route with. It accepts all parameters and options as
     the CORS extension.
 
-    :copyright: (c) 2017 by Cory Dolphin.
+    :copyright: (c) 2017 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
 from functools import update_wrapper
 from .core import *
 
 LOG = logging.getLogger(__name__)
+
 
 def cross_origin(app, *args, **kwargs):
     """
@@ -105,10 +106,10 @@ def cross_origin(app, *args, **kwargs):
     def decorator(f):
         LOG.debug("Enabling %s for cross_origin using options:%s", f, _options)
 
-        # Sanic does not have the same automatic OPTIONS handling that Sanic does
-        # And Sanic does not allow other middleware to alter the allowed methods on a route
-        # So this chunk cannot work the same as it does in Sanic.
-
+        # Sanic does not have the same automatic OPTIONS handling that Flask does,
+        # and Sanic does not allow other middleware to alter the allowed methods on a route
+        # So this decorator cannot work the same as it does in Sanic.
+        #
         # # If True, intercept OPTIONS requests by modifying the view function,
         # # replicating Sanic's default behavior, and wrapping the response with
         # # CORS headers.
@@ -121,7 +122,6 @@ def cross_origin(app, *args, **kwargs):
         #     f.required_methods.add('OPTIONS')
         #     f.provide_automatic_options = False
 
-
         def wrapped_function(req, *args, **kwargs):
             # Handle setting of Sanic-Cors parameters
             options = get_cors_options(app, _options)
@@ -132,7 +132,7 @@ def cross_origin(app, *args, **kwargs):
                 resp = f(req, *args, **kwargs)
 
             set_cors_headers(req, resp, options)
-            resp.headers[SANIC_CORS_EVALUATED] = "1"
+            req.headers[SANIC_CORS_EVALUATED] = "1"
             return resp
 
         return update_wrapper(wrapped_function, f)

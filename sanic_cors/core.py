@@ -4,7 +4,7 @@
     ~~~~
     Core functionality shared between the extension and the decorator.
 
-    :copyright: (c) 2017 by Cory Dolphin.
+    :copyright: (c) 2017 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
 import re
@@ -38,7 +38,7 @@ CONFIG_OPTIONS = ['CORS_ORIGINS', 'CORS_METHODS', 'CORS_ALLOW_HEADERS',
 # Attribute added to request object by decorator to indicate that CORS
 # was evaluated, in case the decorator and extension are both applied
 # to a view.
-SANIC_CORS_EVALUATED = '_SANIC_CORS_EVALUATED'
+SANIC_CORS_EVALUATED = '_sanic_cors_evaluated'
 
 # Strange, but this gets the type of a compiled regex, which is otherwise not
 # exposed in a public API.
@@ -219,12 +219,14 @@ def set_cors_headers(req, resp, options):
 
     This function is used both in the decorator and the after_request
     callback
+    :param sanic.request.Request req:
+
     """
 
     # If CORS has already been evaluated via the decorator, skip
-    if isinstance(resp.headers, (dict, CIDict)) and SANIC_CORS_EVALUATED in resp.headers:
+    if isinstance(req.headers, (dict, CIDict)) and SANIC_CORS_EVALUATED in req.headers:
         LOG.debug('CORS have been already evaluated, skipping')
-        del resp.headers[str(SANIC_CORS_EVALUATED).casefold()]
+        del req.headers[SANIC_CORS_EVALUATED]
         return resp
 
     # Some libraries, like OAuthlib, set resp.headers to non Multidict
