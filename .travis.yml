@@ -7,7 +7,7 @@ python:
 env:
 - SANIC=0.4.1
 install:
-- pip install -U setuptools pep8 coverage docutils pygments sanic==$SANIC
+- pip install -U setuptools pep8 coverage docutils pygments sanic==$SANIC aiohttp
 script:
 - coverage erase
 - nosetests --with-coverage --cover-package=sanic_cors
