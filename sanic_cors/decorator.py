@@ -122,7 +122,7 @@ def cross_origin(app, *args, **kwargs):
         #     f.required_methods.add('OPTIONS')
         #     f.provide_automatic_options = False
 
-        def wrapped_function(req, *args, **kwargs):
+        async def wrapped_function(req, *args, **kwargs):
             # Handle setting of Sanic-Cors parameters
             options = get_cors_options(app, _options)
 
@@ -130,6 +130,8 @@ def cross_origin(app, *args, **kwargs):
                 resp = response.HTTPResponse()
             else:
                 resp = f(req, *args, **kwargs)
+                if asyncio.iscoroutine(resp):
+                    resp = await resp
 
             set_cors_headers(req, resp, options)
             req.headers[SANIC_CORS_EVALUATED] = "1"
