@@ -9,6 +9,7 @@
     :copyright: (c) 2017 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
+import asyncio
 from functools import update_wrapper
 from .core import *
 
