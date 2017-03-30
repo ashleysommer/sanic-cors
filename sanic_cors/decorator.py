@@ -131,7 +131,7 @@ def cross_origin(app, *args, **kwargs):
                 resp = response.HTTPResponse()
             else:
                 resp = f(req, *args, **kwargs)
-                if asyncio.iscoroutine(resp):
+                while asyncio.iscoroutine(resp):
                     resp = await resp
 
             set_cors_headers(req, resp, options)
