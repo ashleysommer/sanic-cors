@@ -9,8 +9,9 @@
     :license: MIT, see LICENSE for more details.
 """
 from functools import update_wrapper
-from sanic import Sanic, request, response
+from sanic import exceptions
 from .core import *
+import logging
 
 LOG = logging.getLogger(__name__)
 
@@ -161,48 +162,31 @@ class CORS(object):
         app.middleware('response')(cors_response_middleware)
 
         def _exception_response_wrapper(f):
-
             # wrap app's original exception response function
             # so that error responses have proper CORS headers
             def wrapped_function(req, e):
-
                 # get response from the original handler
                 resp = f(req, e)
-
-                try:
-                    for res_regex, res_options in resources:
-                        if try_match(req.url, res_regex):
-                            LOG.debug("Request to '%s' matches CORS resource '%s'."
-                                      " Using options: %s",
-                                      req.url, get_regexp_pattern(res_regex), res_options)
-                            set_cors_headers(req, resp, res_options)
-                            break
-                    else:
-                        LOG.debug('No CORS rule matches')
-                except AttributeError:
-                    # not sure why certain exceptions dosen't has
-                    # an acompanying request
-                    pass
+                # SanicExceptions are equiv to Flask Aborts, always apply CORS to it.
+                if isinstance(e, exceptions.SanicException) or options.get('intercept_exceptions', True):
+                    try:
+                        for res_regex, res_options in resources:
+                            if try_match(req.url, res_regex):
+                                LOG.debug("Request to '%s' matches CORS resource '%s'."
+                                          " Using options: %s",
+                                          req.url, get_regexp_pattern(res_regex), res_options)
+                                set_cors_headers(req, resp, res_options)
+                                break
+                        else:
+                            LOG.debug('No CORS rule matches')
+                    except AttributeError:
+                        # not sure why certain exceptions doesn't has
+                        # an accompanying request
+                        pass
                 return resp
             return update_wrapper(wrapped_function, f)
 
-        app.error_handler.response = _exception_response_wrapper(
-                app.error_handler.response
-        )
-        # Wrap exception handlers with cross_origin
-        # These error handlers will still respect the behavior of the route
-        #TODO: Fix this for Sanic
-        # if options.get('intercept_exceptions', True):
-        #     def _after_request_decorator(f):
-        #         def wrapped_function(*args, **kwargs):
-        #             return cors_response_middleware(app.make_response(f(*args, **kwargs)))
-        #         return wrapped_function
-        #
-        #     if hasattr(app, 'handle_exception'):
-        #         app.handle_exception = _after_request_decorator(
-        #             app.handle_exception)
-        #         app.handle_user_exception = _after_request_decorator(
-        #             app.handle_user_exception)
+        app.error_handler.response = _exception_response_wrapper(app.error_handler.response)
 
 
 def make_cors_response_middleware_function(resources):
