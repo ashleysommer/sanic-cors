@@ -16,18 +16,18 @@ class AllowHeadersTestCaseIntegration(SanicCorsTestCase):
     def setUp(self):
         self.app = Sanic(__name__)
 
-        @self.app.route('/test_default')
+        @self.app.route('/test_default', methods=['GET', 'HEAD', 'OPTIONS'])
         @cross_origin(self.app)
         def test_default(request):
             return text('Welcome!')
 
-        @self.app.route('/test_allow_headers', methods=['GET', 'OPTIONS'])
+        @self.app.route('/test_allow_headers', methods=['GET', 'HEAD', 'OPTIONS'])
         @cross_origin(self.app, allow_headers=['X-Example-Header-B',
                                      'X-Example-Header-A'])
         def test_allow_headers(request):
             return text('Welcome!')
 
-        @self.app.route('/test_allow_headers_regex', methods=['GET', 'OPTIONS'])
+        @self.app.route('/test_allow_headers_regex', methods=['GET', 'HEAD', 'OPTIONS'])
         @cross_origin(self.app, allow_headers=[r'X-COMPANY-.*'])
         def test_allow_headers_regex(request):
             return text('Welcome!')

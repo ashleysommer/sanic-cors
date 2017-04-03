@@ -25,6 +25,11 @@ class OptionsTestCase(SanicCorsTestCase):
         def test_default(request):
             return text('Welcome!')
 
+        @self.app.route('/test_async_default', methods=['GET', 'OPTIONS'])
+        @cross_origin(self.app)
+        async def test_async_default(request):
+            return text('Async Welcome!')
+
         @self.app.route('/test_no_options_and_not_auto', methods=['GET', 'POST', 'PUT', 'DELETE'])
         @cross_origin(self.app, automatic_options=False)
         def test_no_options_and_not_auto(request):
@@ -44,9 +49,20 @@ class OptionsTestCase(SanicCorsTestCase):
         self.assertEqual(resp.status, 200)
         self.assertTrue(ACL_ORIGIN in resp.headers)
 
+        # TODO: this is duplicated (from flask-cors)
         resp = self.options('/test_default', origin='http://foo.bar.com')
         self.assertEqual(resp.status, 200)
         self.assertTrue(ACL_ORIGIN in resp.headers)
+
+        resp = self.options('/test_async_default', origin='http://foo.bar.com')
+        self.assertEqual(resp.status, 200)
+        self.assertTrue(ACL_ORIGIN in resp.headers)
+
+        resp = self.get('/test_async_default', origin='http://foo.bar.com')
+        self.assertEqual(resp.status, 200)
+        self.assertTrue(ACL_ORIGIN in resp.headers)
+        self.assertEqual(resp.body, b"Async Welcome!")
+
 
     def test_no_options_and_not_auto(self):
         '''
@@ -71,6 +87,7 @@ class OptionsTestCase(SanicCorsTestCase):
         self.assertTrue(ACL_ORIGIN in resp.headers)
         self.assertEqual(resp.body.decode("utf-8"), u"Welcome!")
 
+        # TODO: This is duplicated (from flask-cors)
         resp = self.options('/test_options_and_not_auto', origin='http://foo.bar.com')
         self.assertEqual(resp.status, 200)
         self.assertTrue(ACL_ORIGIN in resp.headers)

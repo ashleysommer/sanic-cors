@@ -167,7 +167,7 @@ class CORS(object):
             def wrapped_function(req, e):
                 # get response from the original handler
                 resp = f(req, e)
-                # SanicExceptions are equiv to Flask Aborts, always apply CORS to it.
+                # SanicExceptions are equiv to Flask Aborts, always apply CORS to them.
                 if isinstance(e, exceptions.SanicException) or options.get('intercept_exceptions', True):
                     try:
                         for res_regex, res_options in resources:
