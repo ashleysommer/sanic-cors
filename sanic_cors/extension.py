@@ -8,6 +8,7 @@
     :copyright: (c) 2017 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
+from functools import update_wrapper
 from sanic import Sanic, request, response
 from .core import *
 
@@ -159,6 +160,35 @@ class CORS(object):
         cors_response_middleware = make_cors_response_middleware_function(resources)
         app.middleware('response')(cors_response_middleware)
 
+        def _exception_response_wrapper(f):
+
+            # wrap app's original exception response function
+            # so that error responses have proper CORS headers
+            def wrapped_function(req, e):
+
+                # get response from the original handler
+                resp = f(req, e)
+
+                try:
+                    for res_regex, res_options in resources:
+                        if try_match(req.url, res_regex):
+                            LOG.debug("Request to '%s' matches CORS resource '%s'."
+                                      " Using options: %s",
+                                      req.url, get_regexp_pattern(res_regex), res_options)
+                            set_cors_headers(req, resp, res_options)
+                            break
+                    else:
+                        LOG.debug('No CORS rule matches')
+                except AttributeError:
+                    # not sure why certain exceptions dosen't has
+                    # an acompanying request
+                    pass
+                return resp
+            return update_wrapper(wrapped_function, f)
+
+        app.error_handler.response = _exception_response_wrapper(
+                app.error_handler.response
+        )
         # Wrap exception handlers with cross_origin
         # These error handlers will still respect the behavior of the route
         #TODO: Fix this for Sanic
