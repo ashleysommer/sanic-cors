@@ -223,6 +223,7 @@ class AppExtensionString(SanicCorsTestCase):
         CORS(self.app, resources=r'/api/*',
              headers='Content-Type',
              expose_headers='X-Total-Count',
+             automatic_options=False,
              origins='http://bar.com')
 
         @self.app.route('/api/v1/foo', methods=['GET', 'HEAD', 'OPTIONS'])
@@ -234,7 +235,7 @@ class AppExtensionString(SanicCorsTestCase):
             return json({"success": True})
 
         @self.app.route('/api/v1/special', methods=['GET', 'HEAD', 'OPTIONS'])
-        @cross_origin(self.app, origins='http://foo.com')
+        @cross_origin(self.app, origins='http://foo.com', automatic_options=True)
         def overridden(request):
             return json({"special": True})
 

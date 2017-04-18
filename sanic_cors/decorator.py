@@ -105,6 +105,7 @@ def cross_origin(app, *args, **kwargs):
     _options = kwargs
 
     def decorator(f):
+        nonlocal _options
         LOG.debug("Enabling %s for cross_origin using options:%s", f, _options)
 
         # Sanic does not have the same automatic OPTIONS handling that Flask does,
@@ -124,6 +125,7 @@ def cross_origin(app, *args, **kwargs):
         #     f.provide_automatic_options = False
 
         async def wrapped_function(req, *args, **kwargs):
+            nonlocal _options
             # Handle setting of Sanic-Cors parameters
             options = get_cors_options(app, _options)
 
