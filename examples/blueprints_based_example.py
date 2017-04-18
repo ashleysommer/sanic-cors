@@ -21,11 +21,11 @@ except ImportError:
     from sanic_cors import CORS
 
 
-api_v1 = Blueprint('API_v1', __name__)
+api_v1 = Blueprint(__name__, None)
 
 CORS(api_v1)  # enable CORS on the API_v1 blue print
 
-@api_v1.route("/api/v1/users/")
+@api_v1.route("/api/v1/users", methods=['GET', 'OPTIONS'])
 def list_users(request):
     '''
         Since the path matches the regular expression r'/api/*', this resource
@@ -92,7 +92,7 @@ def create_user(request):
     '''
     return json({"success": True})
 
-public_routes = Blueprint('public', __name__)
+public_routes = Blueprint('public', None)
 
 @public_routes.route("/")
 def hello_world(request):

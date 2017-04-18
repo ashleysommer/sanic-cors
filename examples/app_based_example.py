@@ -49,7 +49,7 @@ def hello_world(request):
 </html>
 ''')
 
-@app.route("/api/v1/users/")
+@app.route("/api/v1/users/", methods=['GET', 'OPTIONS'])
 def list_users(request):
     '''
         Since the path matches the regular expression r'/api/*', this resource
