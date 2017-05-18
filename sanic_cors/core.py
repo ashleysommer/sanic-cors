@@ -38,7 +38,8 @@ CONFIG_OPTIONS = ['CORS_ORIGINS', 'CORS_METHODS', 'CORS_ALLOW_HEADERS',
 # Attribute added to request object by decorator to indicate that CORS
 # was evaluated, in case the decorator and extension are both applied
 # to a view.
-SANIC_CORS_EVALUATED = '_sanic_cors_evaluated'
+SANIC_CORS_EVALUATED = '_sanic_cors_e'
+SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE = "_sanic_cors_srm"
 
 # Strange, but this gets the type of a compiled regex, which is otherwise not
 # exposed in a public API.
@@ -232,17 +233,23 @@ def set_cors_headers(req, resp, options):
     # Some libraries, like OAuthlib, set resp.headers to non Multidict
     # objects (Werkzeug Headers work as well). This is a problem because
     # headers allow repeated values.
+    # TODO: In sanic, the CIDict is _not_ a multidict.
     if not isinstance(resp.headers, CIDict):
+        # FYI this has the added (bonus) side-effect that if resp.headers is None
+        # (response headers can be None on websocket responses for example)
+        # Then CIDict(None) actually creates an empty headers dict, that is correct in this situation.
         resp.headers = CIDict(resp.headers)
 
     headers_to_set = get_cors_headers(options, req.headers, req.method)
 
     LOG.debug('Settings CORS headers: %s', str(headers_to_set))
 
+    # dict .extend() does not work on CIDict (or multidict) so iterate over them and add them individually.
     for k, v in headers_to_set.items():
         resp.headers[k] = v
 
     return resp
+
 
 def probably_regex(maybe_regex):
     if isinstance(maybe_regex, RegexObject):
@@ -252,6 +259,7 @@ def probably_regex(maybe_regex):
         # Use common characters used in regular expressions as a proxy
         # for if this string is in fact a regex.
         return any((c in maybe_regex for c in common_regex_chars))
+
 
 def re_fix(reg):
     """

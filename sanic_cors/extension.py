@@ -193,7 +193,9 @@ class CORS(object):
                                 # an accompanying request
                                 pass
                         if SANIC_0_4_1 < SANIC_VERSION:
-                            req.headers['SKIP_CORS_RESPONSE_MIDDLEWARE'] = True
+                            # On Sanic > 0.4.1, these exceptions have normal CORS middleware applied automatically.
+                            # So set a flag to skip our manual application of the middleware.
+                            req.headers[SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE] = "1"
                         return resp
                     return update_wrapper(wrapped_function, f)
 
@@ -230,11 +232,13 @@ def make_cors_response_middleware_function(resources):
     async def cors_response_middleware(req, resp):
         nonlocal resources
 
-        if SANIC_0_4_1 < SANIC_VERSION and req.headers.get('SKIP_CORS_RESPONSE_MIDDLEWARE'):
+        if SANIC_0_4_1 < SANIC_VERSION and req.headers.get(SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE):
+            LOG.debug('CORS was handled in the exception handler, skipping')
+            # On Sanic > 0.4.1, an exception might already have CORS middleware run on it.
             return resp
 
         # If CORS headers are set in a view decorator, pass
-        elif resp.headers.get(ACL_ORIGIN):
+        elif req.headers.get(SANIC_CORS_EVALUATED):
             LOG.debug('CORS have been already evaluated, skipping')
             return resp
 

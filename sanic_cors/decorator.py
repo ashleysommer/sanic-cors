@@ -110,7 +110,7 @@ def cross_origin(app, *args, **kwargs):
 
         # Sanic does not have the same automatic OPTIONS handling that Flask does,
         # and Sanic does not allow other middleware to alter the allowed methods on a route
-        # So this decorator cannot work the same as it does in Sanic.
+        # So this decorator cannot work the same as it does in Flask-CORS.
         #
         # # If True, intercept OPTIONS requests by modifying the view function,
         # # replicating Sanic's default behavior, and wrapping the response with
