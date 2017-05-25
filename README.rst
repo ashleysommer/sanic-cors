@@ -91,7 +91,7 @@ For a full list of options, please see the full
 
 Preflight Requests
 ------------------
-CORS requests have to send `pre-flight requests <https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/OPTIONS#Preflighted_requests_in_CORS>`
+CORS requests have to send `pre-flight requests <https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/OPTIONS#Preflighted_requests_in_CORS>`_
 via the options method, Sanic by default only allows the GET method, in order to
 service your CORS requests you must specify 'OPTIONS' in the methods argument to
 your routes decorator.
