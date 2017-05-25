@@ -47,7 +47,7 @@ full list of options in the `documentation <http://sanic-cors.corydolphin.com/en
     app = Sanic(__name__)
     CORS(app)
 
-    @app.route("/")
+    @app.route("/", methods=['GET', 'OPTIONS'])
     def hello_world(request):
       return text("Hello, cross-origin-world!")
 
@@ -64,7 +64,7 @@ full list of options in the `documentation <http://sanic-cors.corydolphin.com/en
     app = Sanic(__name__)
     cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-    @app.route("/api/v1/users")
+    @app.route("/api/v1/users", methods=['GET', 'OPTIONS'])
     def list_users(request):
       return text("user example")
 
@@ -78,7 +78,7 @@ full list of options in the `decorator documentation <http://sanic-cors.corydolp
 
 .. code:: python
 
-    @app.route("/")
+    @app.route("/", methods=['GET', 'OPTIONS'])
     @cross_origin(app)
     def hello_world(request):
       return text("Hello, cross-origin-world!")
@@ -88,6 +88,13 @@ Documentation
 
 For a full list of options, please see the full
 `documentation <http://sanic-cors.corydolphin.com/en/latest/>`__
+
+Preflight Requests
+------------------
+CORS requests have to send `pre-flight requests <https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/OPTIONS#Preflighted_requests_in_CORS>`
+via the options method, Sanic by default only allows the GET method, in order to
+service your CORS requests you must specify 'OPTIONS' in the methods argument to
+your routes decorator.
 
 Troubleshooting
 ---------------
