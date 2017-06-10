@@ -7,10 +7,11 @@
     :copyright: (c) 2017 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
-import re
-import logging
 import collections
+import logging
+import re
 from datetime import timedelta
+
 from sanic import request, response
 from sanic.server import CIDict
 
@@ -29,12 +30,12 @@ ACL_REQUEST_METHOD = 'Access-Control-Request-Method'
 ACL_REQUEST_HEADERS = 'Access-Control-Request-Headers'
 
 ALL_METHODS = ['GET', 'HEAD', 'POST', 'OPTIONS', 'PUT', 'PATCH', 'DELETE']
-CONFIG_OPTIONS = ['CORS_ORIGINS', 'CORS_METHODS', 'CORS_ALLOW_HEADERS',
-                  'CORS_EXPOSE_HEADERS', 'CORS_SUPPORTS_CREDENTIALS',
-                  'CORS_MAX_AGE', 'CORS_SEND_WILDCARD',
-                  'CORS_AUTOMATIC_OPTIONS', 'CORS_VARY_HEADER',
-                  'CORS_RESOURCES', 'CORS_INTERCEPT_EXCEPTIONS',
-                  'CORS_ALWAYS_SEND']
+CONFIG_OPTIONS = [
+    'CORS_ORIGINS', 'CORS_METHODS', 'CORS_ALLOW_HEADERS',
+    'CORS_EXPOSE_HEADERS', 'CORS_SUPPORTS_CREDENTIALS', 'CORS_MAX_AGE',
+    'CORS_SEND_WILDCARD', 'CORS_AUTOMATIC_OPTIONS', 'CORS_VARY_HEADER',
+    'CORS_RESOURCES', 'CORS_INTERCEPT_EXCEPTIONS', 'CORS_ALWAYS_SEND'
+]
 # Attribute added to request object by decorator to indicate that CORS
 # was evaluated, in case the decorator and extension are both applied
 # to a view.
@@ -44,18 +45,19 @@ SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE = "_sanic_cors_srm"
 # Strange, but this gets the type of a compiled regex, which is otherwise not
 # exposed in a public API.
 RegexObject = type(re.compile(''))
-DEFAULT_OPTIONS = dict(origins='*',
-                       methods=ALL_METHODS,
-                       allow_headers='*',
-                       expose_headers=None,
-                       supports_credentials=False,
-                       max_age=None,
-                       send_wildcard=False,
-                       automatic_options=False,
-                       vary_header=True,
-                       resources=r'/*',
-                       intercept_exceptions=True,
-                       always_send=True)
+DEFAULT_OPTIONS = dict(
+    origins='*',
+    methods=ALL_METHODS,
+    allow_headers='*',
+    expose_headers=None,
+    supports_credentials=False,
+    max_age=None,
+    send_wildcard=False,
+    automatic_options=True,
+    vary_header=True,
+    resources=r'/*',
+    intercept_exceptions=True,
+    always_send=True)
 
 
 def parse_resources(resources):
@@ -71,9 +73,7 @@ def parse_resources(resources):
             maybe_regex, _ = pair
             return len(get_regexp_pattern(maybe_regex))
 
-        return sorted(resources,
-                      key=pattern_length,
-                      reverse=True)
+        return sorted(resources, key=pattern_length, reverse=True)
 
     elif isinstance(resources, str):
         return [(re_fix(resources), {})]
@@ -83,7 +83,7 @@ def parse_resources(resources):
 
     # Type of compiled regex is not part of the public API. Test for this
     # at runtime.
-    elif isinstance(resources,  RegexObject):
+    elif isinstance(resources, RegexObject):
         return [(re_fix(resources), {})]
 
     else:
@@ -116,20 +116,23 @@ def get_cors_origins(options, request_origin):
 
         # If the allowed origins is an asterisk or 'wildcard', always match
         if wildcard and options.get('send_wildcard'):
-            LOG.debug("Allowed origins are set to '*'. Sending wildcard CORS header.")
+            LOG.debug(
+                "Allowed origins are set to '*'. Sending wildcard CORS header.")
             return ['*']
         # If the value of the Origin header is a case-sensitive match
         # for any of the values in list of origins
         elif try_match_any(request_origin, origins):
-            LOG.debug("The request's Origin header matches. Sending CORS headers.", )
+            LOG.debug(
+                "The request's Origin header matches. Sending CORS headers.", )
             # Add a single Access-Control-Allow-Origin header, with either
             # the value of the Origin header or the string "*" as value.
             # -- W3Spec
             return [request_origin]
         else:
-            LOG.debug("The request's Origin header does not match any of allowed origins.")
+            LOG.debug(
+                "The request's Origin header does not match any of allowed origins."
+            )
             return None
-
 
     elif options.get('always_send'):
         if wildcard:
@@ -145,7 +148,9 @@ def get_cors_origins(options, request_origin):
 
     # Terminate these steps, return the original request untouched.
     else:
-        LOG.debug("The request did not contain an 'Origin' header. This means the browser or client did not request CORS, ensure the Origin Header is set.")
+        LOG.debug(
+            "The request did not contain an 'Origin' header. This means the browser or client did not request CORS, ensure the Origin Header is set."
+        )
         return None
 
 
@@ -156,8 +161,7 @@ def get_allow_headers(options, acl_request_headers):
         # any header that matches in the allow_headers
         matching_headers = filter(
             lambda h: try_match_any(h, options.get('allow_headers')),
-            request_headers
-        )
+            request_headers)
 
         return ', '.join(sorted(matching_headers))
 
@@ -183,7 +187,8 @@ def get_cors_headers(options, request_headers, request_method):
     # This is a preflight request
     # http://www.w3.org/TR/cors/#resource-preflight-requests
     if request_method == 'OPTIONS':
-        acl_request_method = request_headers.get(ACL_REQUEST_METHOD, '').upper()
+        acl_request_method = request_headers.get(ACL_REQUEST_METHOD,
+                                                 '').upper()
 
         # If there is no Access-Control-Request-Method header or if parsing
         # failed, do not set any additional headers
@@ -192,11 +197,15 @@ def get_cors_headers(options, request_headers, request_method):
             # If method is not a case-sensitive match for any of the values in
             # list of methods do not set any additional headers and terminate
             # this set of steps.
-            headers[ACL_ALLOW_HEADERS] = get_allow_headers(options, request_headers.get(ACL_REQUEST_HEADERS))
-            headers[ACL_MAX_AGE] = str(options.get('max_age')) #sanic cannot handle integers in header values.
+            headers[ACL_ALLOW_HEADERS] = get_allow_headers(
+                options, request_headers.get(ACL_REQUEST_HEADERS))
+            headers[ACL_MAX_AGE] = str(options.get(
+                'max_age'))  #sanic cannot handle integers in header values.
             headers[ACL_METHODS] = options.get('methods')
         else:
-            LOG.info("The request's Access-Control-Request-Method header does not match allowed methods. CORS headers will not be applied.")
+            LOG.info(
+                "The request's Access-Control-Request-Method header does not match allowed methods. CORS headers will not be applied."
+            )
 
     # http://www.w3.org/TR/cors/#resource-implementation
     if options.get('vary_header'):
@@ -205,8 +214,7 @@ def get_cors_headers(options, request_headers, request_method):
         # origins that can be matched.
         if headers[ACL_ORIGIN] == '*':
             pass
-        elif (len(options.get('origins')) > 1 or
-              len(origins_to_set) > 1 or
+        elif (len(options.get('origins')) > 1 or len(origins_to_set) > 1 or
               any(map(probably_regex, options.get('origins')))):
             headers['Vary'] = 'Origin'
 
@@ -225,7 +233,8 @@ def set_cors_headers(req, resp, options):
     """
 
     # If CORS has already been evaluated via the decorator, skip
-    if isinstance(req.headers, (dict, CIDict)) and SANIC_CORS_EVALUATED in req.headers:
+    if isinstance(req.headers,
+                  (dict, CIDict)) and SANIC_CORS_EVALUATED in req.headers:
         LOG.debug('CORS have been already evaluated, skipping')
         del req.headers[SANIC_CORS_EVALUATED]
         return resp
@@ -255,7 +264,7 @@ def probably_regex(maybe_regex):
     if isinstance(maybe_regex, RegexObject):
         return True
     else:
-        common_regex_chars = ['*','\\',']', '?']
+        common_regex_chars = ['*', '\\', ']', '?']
         # Use common characters used in regular expressions as a proxy
         # for if this string is in fact a regex.
         return any((c in maybe_regex for c in common_regex_chars))
@@ -301,18 +310,15 @@ def get_cors_options(appInstance, *dicts):
     return serialize_options(options)
 
 
-def get_app_kwarg_dict(appInstance): #appInstance=None TODO
+def get_app_kwarg_dict(appInstance):  #appInstance=None TODO
     """Returns the dictionary of CORS specific app configurations."""
     #app = (appInstance or current_app) //TODO: current_app
     app = appInstance
     # In order to support blueprints which do not have a config attribute
     #app_config = getattr(app, 'config', {}) //TODO. app.config does not have a .get()
     app_config = {}
-    return dict(
-        (k.lower().replace('cors_', ''), app_config.get(k))
-        for k in CONFIG_OPTIONS
-        if app_config.get(k) is not None
-    )
+    return dict((k.lower().replace('cors_', ''), app_config.get(k))
+                for k in CONFIG_OPTIONS if app_config.get(k) is not None)
 
 
 def flexible_str(obj):
@@ -324,8 +330,7 @@ def flexible_str(obj):
     """
     if obj is None:
         return None
-    elif(not isinstance(obj, str)
-            and isinstance(obj, collections.Iterable)):
+    elif (not isinstance(obj, str) and isinstance(obj, collections.Iterable)):
         return ', '.join(str(item) for item in sorted(obj))
     else:
         return str(obj)
@@ -348,6 +353,7 @@ def ensure_iterable(inst):
     else:
         return inst
 
+
 def sanitize_regex_param(param):
     return [re_fix(x) for x in ensure_iterable(param)]
 
@@ -360,15 +366,17 @@ def serialize_options(opts):
 
     for key in opts.keys():
         if key not in DEFAULT_OPTIONS:
-             LOG.warn("Unknown option passed to Sanic-CORS: %s", key)
+            LOG.warn("Unknown option passed to Sanic-CORS: %s", key)
 
     # Ensure origins is a list of allowed origins with at least one entry.
     options['origins'] = sanitize_regex_param(options.get('origins'))
-    options['allow_headers'] = sanitize_regex_param(options.get('allow_headers'))
+    options['allow_headers'] = sanitize_regex_param(
+        options.get('allow_headers'))
 
     # This is expressly forbidden by the spec. Raise a value error so people
     # don't get burned in production.
-    if r'.*' in options['origins'] and options['supports_credentials'] and options['send_wildcard']:
+    if r'.*' in options['origins'] and options[
+            'supports_credentials'] and options['send_wildcard']:
         raise ValueError("Cannot use supports_credentials in conjunction with"
                          "an origin string of '*'. See: "
                          "http://www.w3.org/TR/cors/#resource-requests")
