@@ -301,13 +301,10 @@ def get_cors_options(appInstance, *dicts):
     return serialize_options(options)
 
 
-def get_app_kwarg_dict(appInstance): #appInstance=None TODO
+def get_app_kwarg_dict(appInstance):
     """Returns the dictionary of CORS specific app configurations."""
-    #app = (appInstance or current_app) //TODO: current_app
-    app = appInstance
     # In order to support blueprints which do not have a config attribute
-    #app_config = getattr(app, 'config', {}) //TODO. app.config does not have a .get()
-    app_config = {}
+    app_config = getattr(appInstance, 'config', {})
     return dict(
         (k.lower().replace('cors_', ''), app_config.get(k))
         for k in CONFIG_OPTIONS

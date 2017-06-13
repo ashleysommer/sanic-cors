@@ -136,7 +136,7 @@ class CORS(object):
 
     def init_app(self, app, **kwargs):
         """
-        :param app: Sanic
+        :param sanic.Sanic app:
         :param kwargs:
         :return:
         """
@@ -158,7 +158,7 @@ class CORS(object):
                     ]
         # Create a human readable form of these resources by converting the compiled
         # regular expressions into strings.
-        resources_human = dict([(get_regexp_pattern(pattern), opts) for (pattern,opts) in resources])
+        resources_human = dict([(get_regexp_pattern(pattern), opts) for (pattern, opts) in resources])
         LOG.debug("Configuring CORS with resources: %s", resources_human)
         cors_request_middleware = make_cors_request_middleware_function(resources)
         cors_response_middleware = make_cors_response_middleware_function(resources)
@@ -206,7 +206,7 @@ class CORS(object):
 
 
 def make_cors_request_middleware_function(resources):
-    async def cors_request_middleware(req):
+    def cors_request_middleware(req):
         nonlocal resources
         if req.method == 'OPTIONS':
             try:
@@ -214,15 +214,13 @@ def make_cors_request_middleware_function(resources):
             except AttributeError:
                 path = req.url
             for res_regex, res_options in resources:
-                if try_match(path, res_regex):
+                if res_options.get('automatic_options') and try_match(path, res_regex):
                     LOG.debug("Request to '%s' matches CORS resource '%s'."
                               " Using options: %s",
                               path, get_regexp_pattern(res_regex), res_options)
-                    if res_options.get('automatic_options'):
-                        resp = response.HTTPResponse()
-                        set_cors_headers(req, resp, res_options)
-                        return resp
-                    break
+                    resp = response.HTTPResponse()
+                    set_cors_headers(req, resp, res_options)
+                    return resp
             else:
                 LOG.debug('No CORS rule matches')
     return cors_request_middleware
