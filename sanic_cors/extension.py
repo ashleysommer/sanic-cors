@@ -171,28 +171,32 @@ class CORS(object):
                     # so that error responses have proper CORS headers
                     def wrapped_function(req, e):
                         # get response from the original handler
-                        try:
-                            path = req.path
-                        except AttributeError:
-                            path = req.url
                         resp = f(req, e)
                         # SanicExceptions are equiv to Flask Aborts, always apply CORS to them.
-                        if isinstance(e, exceptions.SanicException) or options.get('intercept_exceptions', True):
+                        if req is not None and \
+                                (isinstance(e, exceptions.SanicException) or options.get('intercept_exceptions', True)):
                             try:
-                                for res_regex, res_options in resources:
-                                    if try_match(path, res_regex):
-                                        LOG.debug("Request to '%s' matches CORS resource '%s'."
-                                                  " Using options: %s",
-                                                  path, get_regexp_pattern(res_regex), res_options)
-                                        set_cors_headers(req, resp, res_options)
-                                        break
+                                try:
+                                    path = req.path
+                                except AttributeError:
+                                    path = req.url
+                                if path is not None:
+                                    for res_regex, res_options in resources:
+                                        if try_match(path, res_regex):
+                                            LOG.debug("Request to '%s' matches CORS resource '%s'."
+                                                      " Using options: %s",
+                                                      path, get_regexp_pattern(res_regex), res_options)
+                                            set_cors_headers(req, resp, res_options)
+                                            break
+                                    else:
+                                        LOG.debug('No CORS rule matches')
                                 else:
-                                    LOG.debug('No CORS rule matches')
+                                    pass
                             except AttributeError:
                                 # not sure why certain exceptions doesn't has
                                 # an accompanying request
                                 pass
-                        if SANIC_0_4_1 < SANIC_VERSION:
+                        if req is not None and SANIC_0_4_1 < SANIC_VERSION:
                             # On Sanic > 0.4.1, these exceptions have normal CORS middleware applied automatically.
                             # So set a flag to skip our manual application of the middleware.
                             req.headers[SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE] = "1"
