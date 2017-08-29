@@ -133,10 +133,11 @@ def cross_origin(app, *args, **kwargs):
                 resp = response.HTTPResponse()
             else:
                 resp = f(req, *args, **kwargs)
-                while asyncio.iscoroutine(resp):
-                    resp = await resp
-
-            set_cors_headers(req, resp, options)
+                if resp is not None:  # `resp` can be None in the case of using Websockets
+                    while asyncio.iscoroutine(resp):
+                        resp = await resp
+            if resp is not None:
+                set_cors_headers(req, resp, options)
             req.headers[SANIC_CORS_EVALUATED] = "1"
             return resp
 

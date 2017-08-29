@@ -230,6 +230,12 @@ def set_cors_headers(req, resp, options):
         del req.headers[SANIC_CORS_EVALUATED]
         return resp
 
+    # `resp` can be None in the case of using Websockets
+    # however this case should have been handled in the `extension` and `decorator` methods
+    # before getting here. This is a final failsafe check to prevent crashing
+    if resp is None:
+        return None
+
     # Some libraries, like OAuthlib, set resp.headers to non Multidict
     # objects (Werkzeug Headers work as well). This is a problem because
     # headers allow repeated values.

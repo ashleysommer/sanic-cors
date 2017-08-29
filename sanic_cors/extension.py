@@ -173,7 +173,7 @@ class CORS(object):
                         # get response from the original handler
                         resp = f(req, e)
                         # SanicExceptions are equiv to Flask Aborts, always apply CORS to them.
-                        if req is not None and \
+                        if (req is not None and resp is not None) and \
                                 (isinstance(e, exceptions.SanicException) or options.get('intercept_exceptions', True)):
                             try:
                                 try:
@@ -233,6 +233,9 @@ def make_cors_request_middleware_function(resources):
 def make_cors_response_middleware_function(resources):
     async def cors_response_middleware(req, resp):
         nonlocal resources
+        # `resp` can be None in the case of using Websockets
+        if resp is None:
+            return None
 
         if SANIC_0_4_1 < SANIC_VERSION and req.headers.get(SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE):
             LOG.debug('CORS was handled in the exception handler, skipping')
