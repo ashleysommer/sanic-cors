@@ -235,17 +235,17 @@ def make_cors_response_middleware_function(resources):
         nonlocal resources
         # `resp` can be None in the case of using Websockets
         if resp is None:
-            return None
+            return False
 
         if SANIC_0_4_1 < SANIC_VERSION and req.headers.get(SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE):
             LOG.debug('CORS was handled in the exception handler, skipping')
             # On Sanic > 0.4.1, an exception might already have CORS middleware run on it.
-            return resp
+            return False
 
         # If CORS headers are set in a view decorator, pass
         elif req.headers.get(SANIC_CORS_EVALUATED):
             LOG.debug('CORS have been already evaluated, skipping')
-            return resp
+            return False
 
         try:
             path = req.path
@@ -260,5 +260,4 @@ def make_cors_response_middleware_function(resources):
                 break
         else:
             LOG.debug('No CORS rule matches')
-        return resp
     return cors_response_middleware
