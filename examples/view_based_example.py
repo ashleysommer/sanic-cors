@@ -27,7 +27,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 @app.route("/", methods=['GET', 'OPTIONS'])
-@cross_origin(app)
+@cross_origin()
 def hello_world(request):
     '''
         This view has CORS enabled for all domains, representing the simplest

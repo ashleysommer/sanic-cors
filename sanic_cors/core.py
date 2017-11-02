@@ -11,7 +11,6 @@ import re
 import logging
 import collections
 from datetime import timedelta
-from sanic import request, response
 from sanic.server import CIDict
 
 LOG = logging.getLogger(__name__)
@@ -130,7 +129,6 @@ def get_cors_origins(options, request_origin):
             LOG.debug("The request's Origin header does not match any of allowed origins.")
             return None
 
-
     elif options.get('always_send'):
         if wildcard:
             # If wildcard is in the origins, even if 'send_wildcard' is False,
@@ -145,7 +143,8 @@ def get_cors_origins(options, request_origin):
 
     # Terminate these steps, return the original request untouched.
     else:
-        LOG.debug("The request did not contain an 'Origin' header. This means the browser or client did not request CORS, ensure the Origin Header is set.")
+        LOG.debug("The request did not contain an 'Origin' header. "
+                  "This means the browser or client did not request CORS, ensure the Origin Header is set.")
         return None
 
 
@@ -193,10 +192,11 @@ def get_cors_headers(options, request_headers, request_method):
             # list of methods do not set any additional headers and terminate
             # this set of steps.
             headers[ACL_ALLOW_HEADERS] = get_allow_headers(options, request_headers.get(ACL_REQUEST_HEADERS))
-            headers[ACL_MAX_AGE] = str(options.get('max_age')) #sanic cannot handle integers in header values.
+            headers[ACL_MAX_AGE] = str(options.get('max_age'))  # sanic cannot handle integers in header values.
             headers[ACL_METHODS] = options.get('methods')
         else:
-            LOG.info("The request's Access-Control-Request-Method header does not match allowed methods. CORS headers will not be applied.")
+            LOG.info("The request's Access-Control-Request-Method header does not match allowed methods. "
+                     "CORS headers will not be applied.")
 
     # http://www.w3.org/TR/cors/#resource-implementation
     if options.get('vary_header'):
@@ -351,6 +351,7 @@ def ensure_iterable(inst):
     else:
         return inst
 
+
 def sanitize_regex_param(param):
     return [re_fix(x) for x in ensure_iterable(param)]
 
@@ -363,7 +364,7 @@ def serialize_options(opts):
 
     for key in opts.keys():
         if key not in DEFAULT_OPTIONS:
-             LOG.warn("Unknown option passed to Sanic-CORS: %s", key)
+            LOG.warning("Unknown option passed to Sanic-CORS: %s", key)
 
     # Ensure origins is a list of allowed origins with at least one entry.
     options['origins'] = sanitize_regex_param(options.get('origins'))

@@ -12,11 +12,12 @@
 import asyncio
 from functools import update_wrapper
 from .core import *
+from .extension import cors
 
-LOG = logging.getLogger(__name__)
+#LOG = logging.getLogger(__name__)
 
 
-def cross_origin(app, *args, **kwargs):
+def cross_origin(*args, **kwargs):
     """
     This function is the decorator which is used to wrap a Sanic route with.
     In the simplest case, simply use the default parameters to allow all

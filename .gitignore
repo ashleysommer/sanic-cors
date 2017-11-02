@@ -13,7 +13,6 @@ build
 dist
 sdist
 eggs
-env
 parts
 var
 develop-eggs
@@ -42,4 +41,5 @@ pip-log.txt
 *.html~
 .*.sw*
 
-.idea
+.idea/
+.directory
