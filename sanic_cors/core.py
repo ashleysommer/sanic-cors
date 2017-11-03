@@ -213,7 +213,7 @@ def get_cors_headers(options, request_headers, request_method):
     return CIDict((k, v) for k, v in headers.items() if v)
 
 
-def set_cors_headers(req, resp, options):
+def set_cors_headers(req, resp, context, options):
     """
     Performs the actual evaluation of Sanic-CORS options and actually
     modifies the response object.
@@ -224,10 +224,11 @@ def set_cors_headers(req, resp, options):
 
     """
 
+    request_context = context.request
     # If CORS has already been evaluated via the decorator, skip
-    if isinstance(req.headers, (dict, CIDict)) and SANIC_CORS_EVALUATED in req.headers:
+    evaluated = request_context.get(SANIC_CORS_EVALUATED, False)
+    if evaluated:
         LOG.debug('CORS have been already evaluated, skipping')
-        del req.headers[SANIC_CORS_EVALUATED]
         return resp
 
     # `resp` can be None in the case of using Websockets

@@ -23,7 +23,7 @@ def add_routes(app):
 
     @app.route('/test_no_acl_async_abort_404')
     @app.route('/test_acl_async_abort_404')
-    async def test_acl_abort_404(request):
+    async def test_acl_async_abort_404(request):
         raise NotFound("")
 
 

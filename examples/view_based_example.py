@@ -27,7 +27,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 @app.route("/", methods=['GET', 'OPTIONS'])
-@cross_origin()
+@cross_origin(app, automatic_options=True)
 def hello_world(request):
     '''
         This view has CORS enabled for all domains, representing the simplest
@@ -55,7 +55,7 @@ on <a href="https://github.com/ashleysommer/sanic-cors">Github</a>''')
 
 
 @app.route("/api/v1/users/create", methods=['GET', 'POST', 'OPTIONS'])
-@cross_origin(app, allow_headers=['Content-Type'])
+@cross_origin(app, automatic_options=True, allow_headers=['Content-Type'])
 def cross_origin_json_post(request):
     '''
         This view has CORS enabled for all domains, and allows browsers

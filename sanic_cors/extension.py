@@ -9,6 +9,8 @@
     :license: MIT, see LICENSE for more details.
 """
 from functools import update_wrapper, partial
+from inspect import isawaitable
+
 import sanic
 from sanic import exceptions, response
 from spf import SanicPlugin
@@ -22,6 +24,7 @@ SANIC_0_4_1 = LooseVersion("0.4.1")
 
 
 class CORS(SanicPlugin):
+    __slots__ = tuple()
     """
     Initializes Cross Origin Resource sharing for the application. The
     arguments are identical to :py:func:`cross_origin`, with the addition of a
@@ -133,24 +136,34 @@ class CORS(SanicPlugin):
 
     def __init__(self, *args, **kwargs):
         super(CORS, self).__init__(*args, **kwargs)
-        self._options = None
 
-    def on_before_registered(self, *args, **kwargs):
-        self._options = kwargs
-        self.init_app(*args, **kwargs)
 
-    def init_app(self, *args, **kwargs):
-        """
-        :param args:
-        :param kwargs:
-        :return:
-        """
+    def on_before_registered(self, context, *args, **kwargs):
+        context._options = kwargs
+        if not CORS.on_before_registered.has_run:
+            debug = partial(context.log, logging.DEBUG)
+            _ = _make_cors_request_middleware_function(self, debug)
+            _ = _make_cors_response_middleware_function(self, debug)
+        else:
+            print("here")
+        CORS.on_before_registered.has_run = True
 
-        app = self.app
-        debug = partial(self.log, logging.DEBUG)
+    on_before_registered.has_run = False
+
+
+    def on_registered(self, context, *args, **kwargs):
+        # this will need to be called more than once, for every app it is registered on.
+        self.init_app(context, *args, **kwargs)
+
+
+    def init_app(self, context, *args, **kwargs):
+        app = context.app
+        log = context.log
+        _options = context._options
+        debug = partial(log, logging.DEBUG)
         # The resources and options may be specified in the App Config, the CORS constructor
         # or the kwargs to the call to init_app.
-        options = get_cors_options(app, self._options, kwargs)
+        options = get_cors_options(app, _options, kwargs)
 
         # Flatten our resources into a list of the form
         # (pattern_or_regexp, dictionary_of_options)
@@ -160,26 +173,22 @@ class CORS(SanicPlugin):
         # the app's configuration, the constructor, the kwargs to init_app, and
         # finally the options specified in the resources dictionary.
         resources = [
-                     (pattern, get_cors_options(app, options, opts))
-                     for (pattern, opts) in resources
-                    ]
-        context = self.context
+            (pattern, get_cors_options(app, options, opts))
+            for (pattern, opts) in resources
+        ]
         context.options = options
         context.resources = resources
         # Create a human readable form of these resources by converting the compiled
         # regular expressions into strings.
         resources_human = dict([(get_regexp_pattern(pattern), opts) for (pattern, opts) in resources])
-        debug("Configuring CORS with resources: %s", resources_human)
-        _ = _make_cors_request_middleware_function(self)
-        _ = _make_cors_response_middleware_function(self)
+        debug("Configuring CORS with resources: {}".format(resources_human))
         try:
             assert app.error_handler
 
             def _exception_response_wrapper(ctx, f):
                 # wrap app's original exception response function
                 # so that error responses have proper CORS headers
-                def wrapped_function(req, e):
-                    nonlocal ctx
+                def wrapper(ctx, req, e):
                     opts = ctx.options
                     # get response from the original handler
                     resp = f(req, e)
@@ -194,10 +203,10 @@ class CORS(SanicPlugin):
                             if path is not None:
                                 for res_regex, res_options in resources:
                                     if try_match(path, res_regex):
-                                        debug("Request to '%s' matches CORS resource '%s'. "
-                                              "Using options: %s",
-                                              path, get_regexp_pattern(res_regex), res_options)
-                                        set_cors_headers(req, resp, res_options)
+                                        debug("Request to '{:s}' matches CORS resource '{}'. "
+                                              "Using options: {}".format(
+                                              path, get_regexp_pattern(res_regex), res_options))
+                                        set_cors_headers(req, resp, ctx, res_options)
                                         break
                                 else:
                                     debug('No CORS rule matches')
@@ -213,17 +222,34 @@ class CORS(SanicPlugin):
                         request_context = ctx.request
                         request_context[SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE] = "1"
                     return resp
-                return update_wrapper(wrapped_function, f)
+
+                return update_wrapper(partial(update_wrapper(wrapper, f), ctx), f)
 
             app.error_handler.response = _exception_response_wrapper(context, app.error_handler.response)
         except (AttributeError, AssertionError):
             # Blueprints have no error_handler. Just skip error_handler initialisation
             pass
 
+    async def route_wrapper(self, route, req, context, request_args, request_kw,
+                            *decorator_args, **decorator_kw):
+        _ = decorator_kw.pop('with_context')  # ignore this.
+        _options = decorator_kw
+        options = get_cors_options(context.app, _options)
+        if options.get('automatic_options') and req.method == 'OPTIONS':
+            resp = response.HTTPResponse()
+        else:
+            resp = route(req, *request_args, **request_kw)
+            if resp is not None:
+                while isawaitable(resp):
+                    resp = await resp
+        if resp is not None:
+            request_context = context.request
+            set_cors_headers(req, resp, context, options)
+            request_context[SANIC_CORS_EVALUATED] = "1"
+        return resp
 
-def _make_cors_request_middleware_function(plugin):
-    debug = partial(plugin.log, logging.DEBUG)
 
+def _make_cors_request_middleware_function(plugin, debug):
     @plugin.middleware(relative="pre", attach_to='request', with_context=True)
     def cors_request_middleware(req, context):
         if req.method == 'OPTIONS':
@@ -234,20 +260,18 @@ def _make_cors_request_middleware_function(plugin):
             resources = context.resources
             for res_regex, res_options in resources:
                 if res_options.get('automatic_options') and try_match(path, res_regex):
-                    debug("Request to '%s' matches CORS resource '%s'. "
-                          "Using options: %s",
-                          path, get_regexp_pattern(res_regex), res_options)
+                    debug("Request to '{:s}' matches CORS resource '{}'. "
+                          "Using options: {}".format(
+                           path, get_regexp_pattern(res_regex), res_options))
                     resp = response.HTTPResponse()
-                    set_cors_headers(req, resp, res_options)
+                    set_cors_headers(req, resp, context, res_options)
                     return resp
             else:
                 debug('No CORS rule matches')
     return cors_request_middleware
 
 
-def _make_cors_response_middleware_function(plugin):
-    debug = partial(plugin.log, logging.DEBUG)
-
+def _make_cors_response_middleware_function(plugin, debug):
     @plugin.middleware(relative="post", attach_to='response', with_context=True)
     async def cors_response_middleware(req, resp, context):
         request_context = context.request
@@ -272,9 +296,9 @@ def _make_cors_response_middleware_function(plugin):
         resources = context.resources
         for res_regex, res_options in resources:
             if try_match(path, res_regex):
-                debug("Request to '%s' matches CORS resource '%s'. Using options: %s",
-                      path, get_regexp_pattern(res_regex), res_options)
-                set_cors_headers(req, resp, res_options)
+                debug("Request to '{}' matches CORS resource '{:s}'. Using options: {}".format(
+                      path, get_regexp_pattern(res_regex), res_options))
+                set_cors_headers(req, resp, context, res_options)
                 break
         else:
             debug('No CORS rule matches')
