@@ -1,19 +1,19 @@
 sudo: false
 cache:
-- pip
+  - pip
 language: python
 python:
-- '3.5'
+  - '3.5'
 env:
-- SANIC=0.6.0
+  - SANIC=0.6.0 SPF=0.4.1.dev20171103
 install:
-- pip install -U setuptools pep8 coverage docutils pygments sanic==$SANIC aiohttp
+  - pip install -U setuptools pep8 coverage docutils pygments aiohttp sanic==$SANIC sanic-plugins-framework>=$SPF
 script:
-- coverage erase
-- nosetests --with-coverage --cover-package=sanic_cors
-- python setup.py clean build install
+  - coverage erase
+  - nosetests --with-coverage --cover-package=sanic_cors
+  - python setup.py clean build install
 after_success:
-- pep8 sanic_cors.py
+  - pep8 sanic_cors.py
 deploy:
   provider: pypi
   user: ashleysommer

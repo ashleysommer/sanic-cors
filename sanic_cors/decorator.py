@@ -9,11 +9,14 @@
     :copyright: (c) 2017 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
-import asyncio
 from functools import update_wrapper
-from .core import *
+from inspect import isawaitable
 
-LOG = logging.getLogger(__name__)
+from spf import SanicPluginsFramework
+from .core import *
+from .extension import cors
+
+#LOG = logging.getLogger(__name__)
 
 
 def cross_origin(app, *args, **kwargs):
@@ -103,43 +106,19 @@ def cross_origin(app, *args, **kwargs):
 
     """
     _options = kwargs
+    _real_decorator = cors.decorate(app, *args, run_middleware=False, with_context=False, **kwargs)
 
-    def decorator(f):
-        nonlocal _options
-        LOG.debug("Enabling %s for cross_origin using options:%s", f, _options)
+    def wrapped_decorator(f):
+        spf = SanicPluginsFramework(app)  # get the singleton from the app
+        try:
+            plugin = spf.register_plugin(cors, skip_reg=True)
+        except ValueError as e:
+            # this is normal, if this plugin has been registered previously
+            assert e.args and len(e.args) > 1
+            plugin = e.args[1]
+        context = cors.get_context_from_spf(spf)
+        log = context.log
+        log(logging.DEBUG, "Enabled {:s} for cross_origin using options: {}".format(str(f), str(_options)))
+        return _real_decorator(f)
 
-        # Sanic does not have the same automatic OPTIONS handling that Flask does,
-        # and Sanic does not allow other middleware to alter the allowed methods on a route
-        # So this decorator cannot work the same as it does in Flask-CORS.
-        #
-        # # If True, intercept OPTIONS requests by modifying the view function,
-        # # replicating Sanic's default behavior, and wrapping the response with
-        # # CORS headers.
-        # #
-        # # If f.provide_automatic_options is unset or True, Sanic's route
-        # # decorator (which is actually wraps the function object we return)
-        # # intercepts OPTIONS handling, and requests will not have CORS headers
-        # if _options.get('automatic_options', True):
-        #     f.required_methods = getattr(f, 'required_methods', set())
-        #     f.required_methods.add('OPTIONS')
-        #     f.provide_automatic_options = False
-
-        async def wrapped_function(req, *args, **kwargs):
-            nonlocal _options
-            # Handle setting of Sanic-Cors parameters
-            options = get_cors_options(app, _options)
-
-            if options.get('automatic_options') and req.method == 'OPTIONS':
-                resp = response.HTTPResponse()
-            else:
-                resp = f(req, *args, **kwargs)
-                if resp is not None:  # `resp` can be None in the case of using Websockets
-                    while asyncio.iscoroutine(resp):
-                        resp = await resp
-            if resp is not None:
-                set_cors_headers(req, resp, options)
-            req.headers[SANIC_CORS_EVALUATED] = "1"
-            return resp
-
-        return update_wrapper(wrapped_function, f)
-    return decorator
+    return wrapped_decorator

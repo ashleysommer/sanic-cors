@@ -1,5 +1,29 @@
 # Change Log
 
+## 0.9.0
+Ported Sanic-CORS to use Sanic-Plugins-Framework!
+
+This is a big change. Some major architectural changes needed to occur.
+
+All tests pass, so hopefully there's no fallout in any user facing way.
+
+No longer tracking SANIC version numbers, we are doing our own versioning now.
+
+## 0.6.0.2
+Bug fixes, see git commits
+
+## 0.6.0.1
+Bug fixes, see git commits
+
+## 0.6.0.0
+Update to Sanic 0.6.0
+
+## 0.5.0.0
+Update to Sanic 0.5.x
+
+## 0.4.1
+Update to Sanic 0.4.1
+
 ## 0.1.0
 Initial release of Sanic-Cors, ported to Sanic from Flask-Cors v3.0.2
 
