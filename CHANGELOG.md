@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.9.1
+Bumped to new version of SPF, to handle tracking multiple Request contexts at once.
+
 ## 0.9.0
 Ported Sanic-CORS to use Sanic-Plugins-Framework!
 

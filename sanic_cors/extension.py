@@ -144,9 +144,7 @@ class CORS(SanicPlugin):
             debug = partial(context.log, logging.DEBUG)
             _ = _make_cors_request_middleware_function(self, debug)
             _ = _make_cors_response_middleware_function(self, debug)
-        else:
-            print("here")
-        CORS.on_before_registered.has_run = True
+            CORS.on_before_registered.has_run = True
 
     on_before_registered.has_run = False
 
@@ -219,7 +217,7 @@ class CORS(SanicPlugin):
                     if req is not None and SANIC_0_4_1 < SANIC_VERSION:
                         # On Sanic > 0.4.1, these exceptions have normal CORS middleware applied automatically.
                         # So set a flag to skip our manual application of the middleware.
-                        request_context = ctx.request
+                        request_context = ctx.request[id(req)]
                         request_context[SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE] = "1"
                     return resp
 
@@ -243,7 +241,7 @@ class CORS(SanicPlugin):
                 while isawaitable(resp):
                     resp = await resp
         if resp is not None:
-            request_context = context.request
+            request_context = context.request[id(req)]
             set_cors_headers(req, resp, context, options)
             request_context[SANIC_CORS_EVALUATED] = "1"
         return resp
@@ -274,7 +272,7 @@ def _make_cors_request_middleware_function(plugin, debug):
 def _make_cors_response_middleware_function(plugin, debug):
     @plugin.middleware(relative="post", attach_to='response', with_context=True)
     async def cors_response_middleware(req, resp, context):
-        request_context = context.request
+        request_context = context.request[id(req)]
         # `resp` can be None in the case of using Websockets
         if resp is None:
             return False

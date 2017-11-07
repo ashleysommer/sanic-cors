@@ -224,7 +224,7 @@ def set_cors_headers(req, resp, context, options):
 
     """
 
-    request_context = context.request
+    request_context = context.request[id(req)]
     # If CORS has already been evaluated via the decorator, skip
     evaluated = request_context.get(SANIC_CORS_EVALUATED, False)
     if evaluated:
