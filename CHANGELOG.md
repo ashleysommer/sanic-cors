@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.9.2
+On Sanic 0.6.0, some exceptions can be thrown _after_ a request has finished. In this case, the request context has been destroyed and cannot be accessed. Added a fix for those scenarios.
+
 ## 0.9.1
 Bumped to new version of SPF, to handle tracking multiple Request contexts at once.
 

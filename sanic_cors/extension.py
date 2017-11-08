@@ -217,8 +217,11 @@ class CORS(SanicPlugin):
                     if req is not None and SANIC_0_4_1 < SANIC_VERSION:
                         # On Sanic > 0.4.1, these exceptions have normal CORS middleware applied automatically.
                         # So set a flag to skip our manual application of the middleware.
-                        request_context = ctx.request[id(req)]
-                        request_context[SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE] = "1"
+                        try:
+                            request_context = ctx.request[id(req)]
+                            request_context[SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE] = "1"
+                        except AttributeError:
+                            debug("Cannot find the request context. Is request already finished?")
                     return resp
 
                 return update_wrapper(partial(update_wrapper(wrapper, f), ctx), f)
@@ -272,7 +275,11 @@ def _make_cors_request_middleware_function(plugin, debug):
 def _make_cors_response_middleware_function(plugin, debug):
     @plugin.middleware(relative="post", attach_to='response', with_context=True)
     async def cors_response_middleware(req, resp, context):
-        request_context = context.request[id(req)]
+        try:
+            request_context = context.request[id(req)]
+        except AttributeError:
+            debug("Cannot find the request context. Is request already finished?")
+            return False
         # `resp` can be None in the case of using Websockets
         if resp is None:
             return False

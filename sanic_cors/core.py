@@ -223,8 +223,11 @@ def set_cors_headers(req, resp, context, options):
     :param sanic.request.Request req:
 
     """
-
-    request_context = context.request[id(req)]
+    try:
+        request_context = context.request[id(req)]
+    except AttributeError:
+        LOG.debug("Cannot find the request context. Is request already finished?")
+        return resp
     # If CORS has already been evaluated via the decorator, skip
     evaluated = request_context.get(SANIC_CORS_EVALUATED, False)
     if evaluated:
