@@ -9,14 +9,10 @@
     :copyright: (c) 2017 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
-from functools import update_wrapper
-from inspect import isawaitable
 
 from spf import SanicPluginsFramework
 from .core import *
 from .extension import cors
-
-#LOG = logging.getLogger(__name__)
 
 
 def cross_origin(app, *args, **kwargs):

@@ -43,3 +43,5 @@ pip-log.txt
 
 .idea/
 .directory
+venv36/
+venv35/

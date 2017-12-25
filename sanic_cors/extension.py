@@ -18,7 +18,7 @@ from .core import *
 from distutils.version import LooseVersion
 import logging
 
-#LOG = logging.getLogger(__name__)
+
 SANIC_VERSION = LooseVersion(sanic.__version__)
 SANIC_0_4_1 = LooseVersion("0.4.1")
 
