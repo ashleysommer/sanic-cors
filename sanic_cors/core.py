@@ -240,15 +240,8 @@ def set_cors_headers(req, resp, context, options):
     if resp is None:
         return None
 
-    # Some libraries, like OAuthlib, set resp.headers to non Multidict
-    # objects (Werkzeug Headers work as well). This is a problem because
-    # headers allow repeated values.
-    # TODO: In sanic, the CIDict is _not_ a multidict.
-    if not isinstance(resp.headers, CIDict):
-        # FYI this has the added (bonus) side-effect that if resp.headers is None
-        # (response headers can be None on websocket responses for example)
-        # Then CIDict(None) actually creates an empty headers dict, that is correct in this situation.
-        resp.headers = CIDict(resp.headers)
+    if resp.headers is None:
+        resp.headers = {}
 
     headers_to_set = get_cors_headers(options, req.headers, req.method)
 
