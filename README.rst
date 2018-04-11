@@ -5,7 +5,8 @@ Sanic-CORS
 |License|
 
 A Sanic extension for handling Cross Origin Resource Sharing (CORS),
-making cross-origin AJAX possible. Based on flask-cors by Cory Dolphin.
+making cross-origin AJAX possible. Based on
+`flask-cors <https://github.com/corydolphin/flask-cors>`__ by Cory Dolphin.
 
 This package has a simple philosophy, when you want to enable CORS, you
 wish to enable it for all use cases on a domain. This means no mucking
@@ -28,17 +29,18 @@ Install the extension with using pip, or easy\_install.
 Usage
 -----
 
-This package exposes a Sanic extension which by default enables CORS support on all routes, for all origins and methods. It allows parameterization of all CORS headers on a per-resource level. The package also contains a decorator, for those who prefer this approach.
+This package exposes a Sanic extension which by default enables CORS support on
+all routes, for all origins and methods. It allows parameterization of all
+CORS headers on a per-resource level. The package also contains a decorator,
+for those who prefer this approach.
 
 Simple Usage
 ~~~~~~~~~~~~
 
 In the simplest case, initialize the Sanic-Cors extension with default
-arguments in order to allow CORS for all domains on all routes. See the
-full list of options in the `documentation <http://sanic-cors.corydolphin.com/en/latest/api.html#extension>`__.
+arguments in order to allow CORS for all domains on all routes.
 
 .. code:: python
-
 
     from sanic import Sanic
     from sanic.response import text
@@ -56,8 +58,7 @@ Resource specific CORS
 
 Alternatively, you can specify CORS options on a resource and origin
 level of granularity by passing a dictionary as the `resources` option,
-mapping paths to a set of options. See the
-full list of options in the `documentation <http://sanic-cors.corydolphin.com/en/latest/api.html#extension>`__.
+mapping paths to a set of options.
 
 .. code:: python
 
@@ -73,8 +74,7 @@ Route specific CORS via decorator
 
 This extension also exposes a simple decorator to decorate sanic routes
 with. Simply add ``@cross_origin(app)`` below a call to Sanic's
-``@app.route(..)`` to allow CORS on a given route. See the
-full list of options in the `decorator documentation <http://sanic-cors.corydolphin.com/en/latest/api.html#decorator>`__.
+``@app.route(..)`` to allow CORS on a given route.
 
 .. code:: python
 
@@ -86,15 +86,59 @@ full list of options in the `decorator documentation <http://sanic-cors.corydolp
 Documentation
 -------------
 
-For a full list of options, please see the full
-`documentation <http://sanic-cors.corydolphin.com/en/latest/>`__
+For a full list of options, please see the flask-cors
+`documentation <http://flask-cors.corydolphin.com/en/latest/>`__
 
 Preflight Requests
 ------------------
 CORS requests have to send `pre-flight requests <https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/OPTIONS#Preflighted_requests_in_CORS>`_
-via the options method, Sanic by default only allows the GET method, in order to
-service your CORS requests you must specify 'OPTIONS' in the methods argument to
+via the options method, Sanic by default only allows the ``GET`` method, in order to
+service your CORS requests you must specify ``OPTIONS`` in the methods argument to
 your routes decorator.
+
+Alternately, you can use the ``automatic_options`` configuration parameter to
+handle the ``OPTIONS`` response automatically for you.
+
+.. code:: python
+
+    CORS(app, automatic_options=True)
+
+    @app.delete('/api/auth')
+    @auth.login_required
+    async def auth_logout(request):
+    auth.logout_user(request)
+        return json(None, status=OK)
+
+or with the app config key:
+
+.. code:: python
+
+    app = Sanic(__name__)
+    app.config['CORS_AUTOMATIC_OPTIONS'] = True
+
+    CORS(app)
+
+    @app.delete('/api/auth')
+    @auth.login_required
+    async def auth_logout(request):
+        auth.logout_user(request)
+        return json(None, status=OK)
+
+or directly on the route with the ``cross_origin`` decorator:
+
+.. code:: python
+
+    @app.route('/api/auth', methods={'DELETE','OPTIONS'})
+    @auth.login_required
+    @cross_origin(app, automatic_options=True)
+    async def auth_logout(request):
+        auth.logout_user(request)
+        return json(None, status=OK)
+
+Note: For the third example, you must use ``@route()``, rather than
+``@delete()`` because you need to enable both ``DELETE`` and ``OPTIONS`` to
+work on that route, even though the decorator is handling the ``OPTIONS``
+response.
 
 Troubleshooting
 ---------------
@@ -105,7 +149,6 @@ what is going on under the hood, and why.
 .. code:: python
 
     logging.getLogger('sanic_cors').level = logging.DEBUG
-
 
 Tests
 -----
@@ -118,10 +161,8 @@ Contributing
 ------------
 
 Questions, comments or improvements? Please create an issue on
-`Github <https://github.com/ashleysommer/sanic-cors>`__, tweet at
-`@corydolphin <https://twitter.com/corydolphin>`__ or send me an email.
-I do my best to include every contribution proposed in any way that I
-can.
+`Github <https://github.com/ashleysommer/sanic-cors>`__. I do my best to
+include every contribution proposed in any way that I can.
 
 Credits
 -------
