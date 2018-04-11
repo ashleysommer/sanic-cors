@@ -87,7 +87,7 @@ Documentation
 -------------
 
 For a full list of options, please see the flask-cors
-`documentation <http://flask-cors.corydolphin.com/en/latest/>`__.
+`documentation <http://flask-cors.corydolphin.com/en/latest/api.html#extension>`__.
 
 Preflight Requests
 ------------------
