@@ -11,7 +11,10 @@ import re
 import logging
 import collections
 from datetime import timedelta
-from sanic.server import CIDict
+try:
+    from sanic.server import CIDict
+except ImportError:
+    from sanic.server import CIMultiDict as CIDict
 
 LOG = logging.getLogger(__name__)
 
