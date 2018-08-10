@@ -250,9 +250,13 @@ def set_cors_headers(req, resp, context, options):
 
     LOG.debug('Settings CORS headers: %s', str(headers_to_set))
 
-    # dict .extend() does not work on CIDict (or multidict) so iterate over them and add them individually.
-    for k, v in headers_to_set.items():
-        resp.headers[k] = v
+    if hasattr(resp.headers, 'extend'):
+        resp.headers.extend(headers_to_set)
+    else:
+        # dict .extend() does not work on CIDict (or multidict) so iterate over
+        # them and add them individually.
+        for k, v in headers_to_set.items():
+            resp.headers[k] = v
 
     return resp
 

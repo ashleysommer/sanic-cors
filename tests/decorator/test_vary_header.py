@@ -12,7 +12,10 @@
 from ..base_test import SanicCorsTestCase
 from sanic import Sanic
 from sanic.response import HTTPResponse, text
-from sanic.server import CIDict
+try:
+    from sanic.server import CIDict
+except ImportError:
+    from sanic.server import CIMultiDict as CIDict
 
 from sanic_cors import *
 
@@ -82,6 +85,7 @@ class VaryHeaderTestCase(SanicCorsTestCase):
         resp = self.get('/test_existing_vary_headers', origin="http://foo.com")
         self.assertEqual(set(resp.headers.getall('Vary')),
                          set(['Origin', 'Accept-Encoding']))
+
 
 if __name__ == "__main__":
     unittest.main()
