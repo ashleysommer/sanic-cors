@@ -12,7 +12,7 @@ import logging
 import collections
 from datetime import timedelta
 from sanic import request, response
-from sanic.server import CIDict
+from sanic.server import CIMultiDict
 
 LOG = logging.getLogger(__name__)
 
@@ -166,13 +166,13 @@ def get_allow_headers(options, acl_request_headers):
 
 def get_cors_headers(options, request_headers, request_method):
     origins_to_set = get_cors_origins(options, request_headers.get('Origin'))
-    headers = CIDict()
+    headers = CIMultiDict()
 
     if not origins_to_set:  # CORS is not enabled for this route
         return headers
 
     for origin in origins_to_set:
-        #  TODO, with CIDict, with will only allow one origin
+        #  TODO, with CIMultiDict, with will only allow one origin
         headers[ACL_ORIGIN] = origin
 
     headers[ACL_EXPOSE_HEADERS] = options.get('expose_headers')
@@ -210,7 +210,7 @@ def get_cors_headers(options, request_headers, request_method):
               any(map(probably_regex, options.get('origins')))):
             headers['Vary'] = 'Origin'
 
-    return CIDict((k, v) for k, v in headers.items() if v)
+    return CIMultiDict((k, v) for k, v in headers.items() if v)
 
 
 def set_cors_headers(req, resp, options):
@@ -225,28 +225,21 @@ def set_cors_headers(req, resp, options):
     """
 
     # If CORS has already been evaluated via the decorator, skip
-    if isinstance(req.headers, (dict, CIDict)) and SANIC_CORS_EVALUATED in req.headers:
+    if isinstance(req.headers, (dict, CIMultiDict)) and SANIC_CORS_EVALUATED in req.headers:
         LOG.debug('CORS have been already evaluated, skipping')
         del req.headers[SANIC_CORS_EVALUATED]
         return resp
 
-    # Some libraries, like OAuthlib, set resp.headers to non Multidict
-    # objects (Werkzeug Headers work as well). This is a problem because
-    # headers allow repeated values.
-    # TODO: In sanic, the CIDict is _not_ a multidict.
-    if not isinstance(resp.headers, CIDict):
+    if not isinstance(resp.headers, CIMultiDict):
         # FYI this has the added (bonus) side-effect that if resp.headers is None
         # (response headers can be None on websocket responses for example)
-        # Then CIDict(None) actually creates an empty headers dict, that is correct in this situation.
-        resp.headers = CIDict(resp.headers)
+        # Then CIMultiDict(None) actually creates an empty headers dict, that is correct in this situation.
+        resp.headers = CIMultiDict(resp.headers)
 
     headers_to_set = get_cors_headers(options, req.headers, req.method)
 
     LOG.debug('Settings CORS headers: %s', str(headers_to_set))
-
-    # dict .extend() does not work on CIDict (or multidict) so iterate over them and add them individually.
-    for k, v in headers_to_set.items():
-        resp.headers[k] = v
+    resp.headers.extend(headers_to_set)
 
     return resp
 
