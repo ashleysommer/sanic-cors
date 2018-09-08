@@ -9,17 +9,13 @@
 from ..base_test import SanicCorsTestCase
 from sanic import Sanic
 from sanic.response import HTTPResponse
-from sanic.server import CIDict
+from sanic.server import CIMultiDict
 
 from sanic_cors import *
 from sanic_cors.core import *
 
 
 class AllowsMultipleHeaderEntries(SanicCorsTestCase):
-    """
-    Note, under the new change in Sanic 0.3.0, where Sanic changed from using multidict.CIMultiDict
-    to its own CIDict implementation, we can no longer store multiple versions of the same header.
-    """
     def setUp(self):
         self.app = Sanic(__name__)
 
@@ -27,7 +23,7 @@ class AllowsMultipleHeaderEntries(SanicCorsTestCase):
         @cross_origin(self.app)
         def test_multiple_set_cookie_headers(request):
             resp = HTTPResponse(body="Foo bar baz")
-            resp.headers = CIDict()
+            resp.headers = CIMultiDict()
             resp.headers['set-cookie'] = 'foo'
             resp.headers['set-cookie'] = 'bar'
             return resp

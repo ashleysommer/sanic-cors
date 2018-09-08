@@ -1,2 +1,2 @@
-sanic-plugins-framework>=0.5.0.dev20171225
-sanic>=0.7.0
+sanic-plugins-framework>=0.6.3.dev20180717
+sanic>=0.8.1

@@ -1,5 +1,18 @@
 # Change Log
 
+## 0.9.5
+Finally a new Sanic is released on PyPI.
+Bump min sanic to v0.8.1
+Bump sanic-plugins-framework to latest
+Use CIMultiDict from Sanic by default, rather than CIDict
+Fix a test which broke after the CIDict change
+
+## 0.9.4
+TODO: Fill in
+
+## 0.9.3
+TODO: Fill in
+
 ## 0.9.2
 On Sanic 0.6.0, some exceptions can be thrown _after_ a request has finished. In this case, the request context has been destroyed and cannot be accessed. Added a fix for those scenarios.
 

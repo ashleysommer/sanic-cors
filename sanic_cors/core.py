@@ -12,9 +12,9 @@ import logging
 import collections
 from datetime import timedelta
 try:
-    from sanic.server import CIDict
+    from sanic.server import CIMultiDict
 except ImportError:
-    from sanic.server import CIMultiDict as CIDict
+    from sanic.server import CIDict as CIMultiDict
 
 LOG = logging.getLogger(__name__)
 
@@ -168,13 +168,14 @@ def get_allow_headers(options, acl_request_headers):
 
 def get_cors_headers(options, request_headers, request_method):
     origins_to_set = get_cors_origins(options, request_headers.get('Origin'))
-    headers = CIDict()
+    headers = CIMultiDict()
 
     if not origins_to_set:  # CORS is not enabled for this route
         return headers
 
     for origin in origins_to_set:
-        #  TODO, with CIDict, with will only allow one origin
+        # TODO, with CIDict, with will only allow one origin
+        # With CIMultiDict it should work with multiple
         headers[ACL_ORIGIN] = origin
 
     headers[ACL_EXPOSE_HEADERS] = options.get('expose_headers')
@@ -213,7 +214,7 @@ def get_cors_headers(options, request_headers, request_method):
               any(map(probably_regex, options.get('origins')))):
             headers['Vary'] = 'Origin'
 
-    return CIDict((k, v) for k, v in headers.items() if v)
+    return CIMultiDict((k, v) for k, v in headers.items() if v)
 
 
 def set_cors_headers(req, resp, context, options):
@@ -251,10 +252,15 @@ def set_cors_headers(req, resp, context, options):
     LOG.debug('Settings CORS headers: %s', str(headers_to_set))
 
     # dict .extend() does not work on CIDict (or multidict) so iterate over them and add them individually.
-    for k, v in headers_to_set.items():
-        resp.headers[k] = v
-
-    return resp
+    try:
+        resp.headers.extend(headers_to_set)
+    except Exception as e1:
+        for k, v in headers_to_set.items():
+            try:
+                resp.add(k, v)
+            except Exception as e2:
+                resp.headers[k] = v
+        return resp
 
 
 def probably_regex(maybe_regex):

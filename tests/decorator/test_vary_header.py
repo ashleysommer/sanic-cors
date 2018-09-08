@@ -12,7 +12,7 @@
 from ..base_test import SanicCorsTestCase
 from sanic import Sanic
 from sanic.response import HTTPResponse, text
-from sanic.server import CIDict
+from sanic.server import CIMultiDict
 
 from sanic_cors import *
 
@@ -39,7 +39,7 @@ class VaryHeaderTestCase(SanicCorsTestCase):
         @self.app.route('/test_existing_vary_headers')
         @cross_origin(self.app, origins=["http://foo.com", "http://bar.com"])
         def test_existing_vary_headers(request):
-            return HTTPResponse('', status=200, headers=CIDict({'Vary': 'Accept-Encoding'}))
+            return HTTPResponse('', status=200, headers=CIMultiDict({'Vary': 'Accept-Encoding'}))
 
     def test_default(self):
         '''
