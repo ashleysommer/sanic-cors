@@ -4,7 +4,7 @@
     ~~~~
     Core functionality shared between the extension and the decorator.
 
-    :copyright: (c) 2017 by Ashley Sommer (based on flask-cors by Cory Dolphin).
+    :copyright: (c) 2018 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
 import re
@@ -40,6 +40,7 @@ CONFIG_OPTIONS = ['CORS_ORIGINS', 'CORS_METHODS', 'CORS_ALLOW_HEADERS',
 # Attribute added to request object by decorator to indicate that CORS
 # was evaluated, in case the decorator and extension are both applied
 # to a view.
+# TODO: Refactor these two flags down into one flag.
 SANIC_CORS_EVALUATED = '_sanic_cors_e'
 SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE = "_sanic_cors_srm"
 
@@ -245,19 +246,20 @@ def set_cors_headers(req, resp, context, options):
         return None
 
     if resp.headers is None:
-        resp.headers = {}
+        resp.headers = CIMultiDict()
 
     headers_to_set = get_cors_headers(options, req.headers, req.method)
 
     LOG.debug('Settings CORS headers: %s', str(headers_to_set))
 
-    # dict .extend() does not work on CIDict (or multidict) so iterate over them and add them individually.
+    # dict .extend() does not work on CIDict so
+    # iterate over them and add them individually.
     try:
         resp.headers.extend(headers_to_set)
     except Exception as e1:
         for k, v in headers_to_set.items():
             try:
-                resp.add(k, v)
+                resp.headers.add(k, v)
             except Exception as e2:
                 resp.headers[k] = v
         return resp
@@ -267,7 +269,7 @@ def probably_regex(maybe_regex):
     if isinstance(maybe_regex, RegexObject):
         return True
     else:
-        common_regex_chars = ['*','\\',']', '?']
+        common_regex_chars = ['*', '\\',']', '?']
         # Use common characters used in regular expressions as a proxy
         # for if this string is in fact a regex.
         return any((c in maybe_regex for c in common_regex_chars))

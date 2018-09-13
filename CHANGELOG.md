@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.9.6
+Minimum supported sanic is now 0.7.0 (removes legacy support)
+Automatic-Options route now sets EVALUATED flag to prevent the response middleware from running again.
+Fixed a bug in `response.headers.add()` function all.
+Updated all (c)2017 text to (c)2018 (very late, I know)
+
 ## 0.9.5
 Finally a new Sanic is released on PyPI.
 Bump min sanic to v0.8.1

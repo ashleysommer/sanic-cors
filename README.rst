@@ -83,6 +83,28 @@ with. Simply add ``@cross_origin(app)`` below a call to Sanic's
     def hello_world(request):
       return text("Hello, cross-origin-world!")
 
+SPF Usage
+~~~~~~~~~~~~
+
+Sanic-CORS uses Sanic-Plugins-Framework behind the scenes.
+That means you can use SPF to load the plugin for you if you are
+orchestrating and application with multiple SPF plugins.
+
+.. code:: python
+
+    from sanic import Sanic
+    from sanic.response import text
+    from spf import SanicPluginsFramework
+    from sanic_cors.extension import cors
+    app = Sanic(__name__)
+    spf = SanicPluginsFramework(app)
+    spf.register_plugin(cors, automatic_options=True)
+
+    @app.route("/", methods=['GET', 'OPTIONS'])
+    def hello_world(request):
+      return text("Hello, cross-origin-world!")
+
+
 Documentation
 -------------
 
