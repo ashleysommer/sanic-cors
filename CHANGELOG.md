@@ -1,5 +1,12 @@
 # Change Log
 
+## 0.9.7
+Changes to allow pickling of the Sanic-CORS Plugin on a Sanic App
+ - This is to allow Multiprocessing via `workers=` on Windows
+Bump minimum required Sanic-Plugins-Framework version to 0.6.4.dev20181101
+ - This release includes similar pickling fixes in order to solve Windows multiprocessing issues in Sanic-Plugins-Framework 
+
+
 ## 0.9.6
 Minimum supported sanic is now 0.7.0 (removes legacy support)
 Automatic-Options route now sets EVALUATED flag to prevent the response middleware from running again.

@@ -13,6 +13,7 @@ from inspect import isawaitable
 
 import sanic
 from sanic import exceptions, response
+from sanic.handlers import ErrorHandler
 from spf import SanicPlugin
 from .core import *
 from distutils.version import LooseVersion
@@ -143,9 +144,9 @@ class CORS(SanicPlugin):
     def on_before_registered(self, context, *args, **kwargs):
         context._options = kwargs
         if not CORS.on_before_registered.has_run:
-            debug = partial(context.log, logging.DEBUG)
-            _ = _make_cors_request_middleware_function(self, debug)
-            _ = _make_cors_response_middleware_function(self, debug)
+            # debug = partial(context.log, logging.DEBUG)
+            _ = _make_cors_request_middleware_function(self)
+            _ = _make_cors_response_middleware_function(self)
             CORS.on_before_registered.has_run = True
 
     on_before_registered.has_run = False
@@ -185,59 +186,8 @@ class CORS(SanicPlugin):
         debug("Configuring CORS with resources: {}".format(resources_human))
         try:
             assert app.error_handler
-
-            def _exception_response_wrapper(ctx, f):
-                def _apply_cors_to_exception(req, resp):
-                    nonlocal ctx
-                    try:
-                        path = req.path
-                    except AttributeError:
-                        path = req.url
-                    if path is not None:
-                        for res_regex, res_options in resources:
-                            if try_match(path, res_regex):
-                                debug(
-                                    "Request to '{:s}' matches CORS resource '{}'. "
-                                    "Using options: {}".format(
-                                        path, get_regexp_pattern(res_regex),
-                                        res_options))
-                                set_cors_headers(req, resp, ctx, res_options)
-                                break
-                        else:
-                            debug('No CORS rule matches')
-                    else:
-                        pass
-
-                # wrap app's original exception response function
-                # so that error responses have proper CORS headers
-                def wrapper(ctx, req, e):
-                    opts = ctx.options
-                    # get response from the original handler
-                    resp = f(req, e)
-                    # SanicExceptions are equiv to Flask Aborts,
-                    # always apply CORS to them.
-                    if (req is not None and resp is not None) and \
-                            (isinstance(e, exceptions.SanicException) or
-                             opts.get('intercept_exceptions', True)):
-                        try:
-                            _apply_cors_to_exception(req, resp)
-                        except AttributeError:
-                            # not sure why certain exceptions doesn't have
-                            # an accompanying request
-                            pass
-                    if req is not None:
-                        # These exceptions have normal CORS middleware applied automatically.
-                        # So set a flag to skip our manual application of the middleware.
-                        try:
-                            request_context = ctx.request[id(req)]
-                            request_context[SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE] = "1"
-                        except AttributeError:
-                            debug("Cannot find the request context. Is request already finished?")
-                    return resp
-
-                return update_wrapper(partial(update_wrapper(wrapper, f), ctx), f)
-
-            app.error_handler.response = _exception_response_wrapper(context, app.error_handler.response)
+            cors_error_handler = CORSErrorHandler(context, app.error_handler)
+            app.error_handler = cors_error_handler
         except (AttributeError, AssertionError):
             # Blueprints have no error_handler. Just skip error_handler initialisation
             pass
@@ -260,68 +210,150 @@ class CORS(SanicPlugin):
             request_context[SANIC_CORS_EVALUATED] = "1"
         return resp
 
-
-def _make_cors_request_middleware_function(plugin, debug):
-    @plugin.middleware(relative="pre", attach_to='request', with_context=True)
-    def cors_request_middleware(req, context):
-        if req.method == 'OPTIONS':
-            try:
-                path = req.path
-            except AttributeError:
-                path = req.url
-            resources = context.resources
-            for res_regex, res_options in resources:
-                if res_options.get('automatic_options') and try_match(path, res_regex):
-                    debug("Request to '{:s}' matches CORS resource '{}'. "
-                          "Using options: {}".format(
-                           path, get_regexp_pattern(res_regex), res_options))
-                    resp = response.HTTPResponse()
-                    request_context = context.request[id(req)]
-                    set_cors_headers(req, resp, context, res_options)
-                    request_context[SANIC_CORS_EVALUATED] = "1"
-                    return resp
-            else:
-                debug('No CORS rule matches')
-    return cors_request_middleware
-
-
-def _make_cors_response_middleware_function(plugin, debug):
-    @plugin.middleware(relative="post", attach_to='response', with_context=True)
-    async def cors_response_middleware(req, resp, context):
-        try:
-            request_context = context.request[id(req)]
-        except AttributeError:
-            debug("Cannot find the request context. Is request already finished?")
-            return False
-        # `resp` can be None in the case of using Websockets
-        if resp is None:
-            return False
-        if request_context.get(SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE):
-            debug('CORS was handled in the exception handler, skipping')
-            return False
-
-        # If CORS headers are set in a view decorator, pass
-        elif request_context.get(SANIC_CORS_EVALUATED):
-            debug('CORS have been already evaluated, skipping')
-            return False
-
+def unapplied_cors_request_middleware(req, context):
+    if req.method == 'OPTIONS':
         try:
             path = req.path
         except AttributeError:
             path = req.url
-
         resources = context.resources
+        log = context.log
+        debug = partial(log, logging.DEBUG)
         for res_regex, res_options in resources:
-            if try_match(path, res_regex):
-                debug("Request to '{}' matches CORS resource '{:s}'. Using options: {}".format(
-                      path, get_regexp_pattern(res_regex), res_options))
+            if res_options.get('automatic_options') and try_match(path, res_regex):
+                debug("Request to '{:s}' matches CORS resource '{}'. "
+                      "Using options: {}".format(
+                       path, get_regexp_pattern(res_regex), res_options))
+                resp = response.HTTPResponse()
+                request_context = context.request[id(req)]
                 set_cors_headers(req, resp, context, res_options)
                 request_context[SANIC_CORS_EVALUATED] = "1"
-                break
+                return resp
         else:
             debug('No CORS rule matches')
-    return cors_response_middleware
 
+
+async def unapplied_cors_response_middleware(req, resp, context):
+    log = context.log
+    debug = partial(log, logging.DEBUG)
+    try:
+        request_context = context.request[id(req)]
+    except AttributeError:
+        debug("Cannot find the request context. Is request already finished?")
+        return False
+    # `resp` can be None in the case of using Websockets
+    if resp is None:
+        return False
+    if request_context.get(SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE):
+        debug('CORS was handled in the exception handler, skipping')
+        return False
+
+    # If CORS headers are set in a view decorator, pass
+    elif request_context.get(SANIC_CORS_EVALUATED):
+        debug('CORS have been already evaluated, skipping')
+        return False
+
+    try:
+        path = req.path
+    except AttributeError:
+        path = req.url
+
+    resources = context.resources
+    for res_regex, res_options in resources:
+        if try_match(path, res_regex):
+            debug("Request to '{}' matches CORS resource '{:s}'. Using options: {}".format(
+                  path, get_regexp_pattern(res_regex), res_options))
+            set_cors_headers(req, resp, context, res_options)
+            request_context[SANIC_CORS_EVALUATED] = "1"
+            break
+    else:
+        debug('No CORS rule matches')
+
+def _make_cors_request_middleware_function(plugin):
+    applied_cors_request_middleware = plugin.middleware(
+        relative="pre", attach_to='request', with_context=True)\
+        (unapplied_cors_request_middleware)
+    return applied_cors_request_middleware
+
+
+def _make_cors_response_middleware_function(plugin):
+    applied_cors_response_middleware = plugin.middleware(
+        relative="post", attach_to='response', with_context=True)\
+        (unapplied_cors_response_middleware)
+    return applied_cors_response_middleware
+
+
+class CORSErrorHandler(ErrorHandler):
+    @classmethod
+    def _apply_cors_to_exception(cls, ctx, req, resp):
+        try:
+            path = req.path
+        except AttributeError:
+            path = req.url
+        if path is not None:
+            resources = ctx.resources
+            log = ctx.log
+            debug = partial(log, logging.DEBUG)
+            for res_regex, res_options in resources:
+                if try_match(path, res_regex):
+                    debug(
+                        "Request to '{:s}' matches CORS resource '{}'. "
+                        "Using options: {}".format(
+                            path, get_regexp_pattern(res_regex),
+                            res_options))
+                    set_cors_headers(req, resp, ctx, res_options)
+                    break
+            else:
+                debug('No CORS rule matches')
+        else:
+            pass
+
+    def __init__(self, context, orig_handler):
+        super(CORSErrorHandler, self).__init__()
+        self.orig_handler = orig_handler
+        self.ctx = context
+
+    def add(self, exception, handler):
+        self.orig_handler.add(exception, handler)
+
+    def lookup(self, exception):
+        return self.orig_handler.lookup(exception)
+
+
+    # wrap app's original exception response function
+    # so that error responses have proper CORS headers
+    @classmethod
+    def wrapper(cls, f, ctx, req, e):
+        opts = ctx.options
+        # get response from the original handler
+        resp = f(req, e)
+        # SanicExceptions are equiv to Flask Aborts,
+        # always apply CORS to them.
+        if (req is not None and resp is not None) and \
+                (isinstance(e, exceptions.SanicException) or
+                 opts.get('intercept_exceptions', True)):
+            try:
+                cls._apply_cors_to_exception(ctx, req, resp)
+            except AttributeError:
+                # not sure why certain exceptions doesn't have
+                # an accompanying request
+                pass
+        if req is not None:
+            # These exceptions have normal CORS middleware applied automatically.
+            # So set a flag to skip our manual application of the middleware.
+            try:
+                request_context = ctx.request[id(req)]
+                request_context[SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE] = "1"
+            except AttributeError:
+                log = ctx.log
+                log(logging.DEBUG,
+                    "Cannot find the request context. "
+                    "Is request already finished?")
+        return resp
+
+    def response(self, request, exception):
+        orig_resp_handler = self.orig_handler.response
+        return self.wrapper(orig_resp_handler, self.ctx, request, exception)
 
 instance = cors = CORS()
 __all__ = ["cors", "CORS"]
