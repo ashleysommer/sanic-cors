@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.9.8
+Bump minimum required Sanic-Plugins-Framework version to 0.7.0
+ - There were some recent important bugs fixed in SPF, so we want to specify a new min SPF version.
+
 ## 0.9.7
 Changes to allow pickling of the Sanic-CORS Plugin on a Sanic App
  - This is to allow Multiprocessing via `workers=` on Windows

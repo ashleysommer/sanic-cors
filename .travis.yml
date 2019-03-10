@@ -5,7 +5,7 @@ language: python
 python:
   - '3.5'
 env:
-  - SANIC=0.8.3 SPF=0.6.4.dev20181101
+  - SANIC=0.8.3 SPF=0.7.0
 install:
   - pip install -U setuptools pep8 coverage docutils pygments aiohttp sanic==$SANIC sanic-plugins-framework>=$SPF
 script:
