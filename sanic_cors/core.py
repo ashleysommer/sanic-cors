@@ -81,7 +81,7 @@ def parse_resources(resources):
     elif isinstance(resources, str):
         return [(re_fix(resources), {})]
 
-    elif isinstance(resources, collections.Iterable):
+    elif isinstance(resources, collections.abc.Iterable):
         return [(re_fix(r), {}) for r in resources]
 
     # Type of compiled regex is not part of the public API. Test for this
@@ -336,7 +336,7 @@ def flexible_str(obj):
     if obj is None:
         return None
     elif(not isinstance(obj, str)
-            and isinstance(obj, collections.Iterable)):
+            and isinstance(obj, collections.abc.Iterable)):
         return ', '.join(str(item) for item in sorted(obj))
     else:
         return str(obj)
@@ -354,7 +354,7 @@ def ensure_iterable(inst):
     """
     if isinstance(inst, str):
         return [inst]
-    elif not isinstance(inst, collections.Iterable):
+    elif not isinstance(inst, collections.abc.Iterable):
         return [inst]
     else:
         return inst
