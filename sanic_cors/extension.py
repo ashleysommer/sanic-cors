@@ -201,13 +201,14 @@ class CORS(SanicPlugin):
             resp = response.HTTPResponse()
         else:
             resp = route(req, *request_args, **request_kw)
-            if resp is not None:
-                while isawaitable(resp):
-                    resp = await resp
-        if resp is not None:
-            request_context = context.request[id(req)]
-            set_cors_headers(req, resp, context, options)
-            request_context[SANIC_CORS_EVALUATED] = "1"
+            while isawaitable(resp):
+                resp = await resp
+            # resp can be `None` or `[]` if using Websockets
+            if not resp:
+                return None
+        request_context = context.request[id(req)]
+        set_cors_headers(req, resp, context, options)
+        request_context[SANIC_CORS_EVALUATED] = "1"
         return resp
 
 def unapplied_cors_request_middleware(req, context):
@@ -241,8 +242,8 @@ async def unapplied_cors_response_middleware(req, resp, context):
     except AttributeError:
         debug("Cannot find the request context. Is request already finished?")
         return False
-    # `resp` can be None in the case of using Websockets
-    if resp is None:
+    # `resp` can be None or [] in the case of using Websockets
+    if not resp:
         return False
     if request_context.get(SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE):
         debug('CORS was handled in the exception handler, skipping')

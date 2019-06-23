@@ -239,10 +239,10 @@ def set_cors_headers(req, resp, context, options):
         LOG.debug('CORS have been already evaluated, skipping')
         return resp
 
-    # `resp` can be None in the case of using Websockets
+    # `resp` can be None or [] in the case of using Websockets
     # however this case should have been handled in the `extension` and `decorator` methods
     # before getting here. This is a final failsafe check to prevent crashing
-    if resp is None:
+    if not resp:
         return None
 
     if resp.headers is None:
