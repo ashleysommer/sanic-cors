@@ -28,6 +28,10 @@ setup(
     description="A Sanic extension adding a decorator for CORS support. Based on flask-cors by Cory Dolphin.",
     long_description=open('README.rst').read(),
     packages=['sanic_cors'],
+    entry_points={
+        'sanic_plugins':
+            ['CORS = sanic_cors.extension:instance']
+    },
     zip_safe=False,
     include_package_data=True,
     platforms='any',

@@ -10,16 +10,8 @@ to add cross origin support to your sanic app!
 from sanic import Sanic
 from sanic.response import json, text
 from sanic.exceptions import ServerError
+from spf import SanicPluginsFramework
 import logging
-try:
-    from sanic_cors import CORS  # The typical way to import sanic-cors
-except ImportError:
-    # Path hack allows examples to be run without installation.
-    import os
-    parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    os.sys.path.insert(0, parentdir)
-    from sanic_cors import CORS
-
 
 app = Sanic('SanicCorsAppBasedExample')
 logging.basicConfig(level=logging.INFO)
@@ -27,10 +19,12 @@ logging.basicConfig(level=logging.INFO)
 # To enable logging for sanic-cors,
 logging.getLogger('sanic_cors').level = logging.DEBUG
 
-# One of the simplest configurations. Exposes all resources matching /api/* to
-# CORS and allows the Content-Type header, which is necessary to POST JSON
-# cross origin.
-CORS(app, resources=r'/api/*')
+app.config['SPF_LOAD_INI'] = True
+app.config['SPF_INI_FILE'] = 'spf_cors.ini'
+spf = SanicPluginsFramework(app)
+
+# We can get the assoc object from SPF, it is already registered
+assoc = spf.get_plugin_assoc('CORS')
 
 
 @app.route("/")

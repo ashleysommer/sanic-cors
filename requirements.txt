@@ -1,2 +1,2 @@
-sanic-plugins-framework>=0.7.0
+sanic-plugins-framework>=0.8.1
 sanic>=0.8.3

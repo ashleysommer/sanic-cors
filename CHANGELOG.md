@@ -1,5 +1,14 @@
 # Change Log
 
+## 0.9.8.post2
+Bump minimum required Sanic-Plugins-Framework version to 0.8.1
+ - This allows us to use the new entrypoints feature to advertise the sanic_cors plugin to SPF apps.
+ - See app_config_example for an example of how this works
+
+## 0.9.8.post1
+Fix an issue where engineio websockets library can return a response of [], and Sanic will pass that onto response-middlewares.
+- We now just check for resp truthiness, so if a resp is None, or False, or [] or any other Falsy value, then we skip applying middleware.
+
 ## 0.9.8
 Bump minimum required Sanic-Plugins-Framework version to 0.7.0
  - There were some recent important bugs fixed in SPF, so we want to specify a new min SPF version.
