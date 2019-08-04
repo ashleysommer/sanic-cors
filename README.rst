@@ -26,6 +26,11 @@ Install the extension with using pip, or easy\_install.
 
     $ pip install -U sanic-cors
 
+NOTE!
+-----
+
+This plugin is not compatible with Sanic 19.6+ in ASGI mode. A fix will be made soon, but in the meantime, the only way to use this plugin with Sanic 19.6+ is to disable ASGI mode.
+
 Usage
 -----
 
