@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.9.8.post3
+Bump minimum required Sanic-Plugins-Framework version to 0.8.2
+ - This fixes compatibility with ASGI mode, as well as alternate server runners like gunicorn server runner.
+
 ## 0.9.8.post2
 Bump minimum required Sanic-Plugins-Framework version to 0.8.1
  - This allows us to use the new entrypoints feature to advertise the sanic_cors plugin to SPF apps.
