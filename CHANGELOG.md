@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.9.9.post1
+Actually fix import of headers on latest Sanic versions
+
 ## 0.9.9
 Fix import of headers on latest Sanic versions
 

@@ -9,7 +9,13 @@
 from ..base_test import SanicCorsTestCase
 from sanic import Sanic
 from sanic.response import HTTPResponse
-from sanic.server import CIMultiDict
+try:
+    from sanic.compat import Header as CIMultiDict
+except ImportError:
+    try:
+        from sanic.server import CIMultiDict
+    except ImportError:
+        from sanic.server import CIDict as CIMultiDict
 
 from sanic_cors import *
 from sanic_cors.core import *

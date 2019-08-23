@@ -12,7 +12,13 @@
 from ..base_test import SanicCorsTestCase
 from sanic import Sanic
 from sanic.response import HTTPResponse, text
-from sanic.server import CIMultiDict
+try:
+    from sanic.compat import Header as CIMultiDict
+except ImportError:
+    try:
+        from sanic.server import CIMultiDict
+    except ImportError:
+        from sanic.server import CIDict as CIMultiDict
 
 from sanic_cors import *
 
@@ -80,7 +86,14 @@ class VaryHeaderTestCase(SanicCorsTestCase):
         '''
 
         resp = self.get('/test_existing_vary_headers', origin="http://foo.com")
-        self.assertEqual(set(resp.headers.getall('Vary')),
+        try:
+            varys = set(resp.headers.get_all('Vary'))
+        except AttributeError:
+            try:
+                varys = set(resp.headers.getall('Vary'))
+            except AttributeError:
+                varys = set([resp.headers.get('Vary')])
+        self.assertEqual(varys,
                          set(['Origin', 'Accept-Encoding']))
 
 if __name__ == "__main__":

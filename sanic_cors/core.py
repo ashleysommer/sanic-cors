@@ -12,7 +12,7 @@ import logging
 import collections
 from datetime import timedelta
 try:
-    from sanic.compat import Header
+    from sanic.compat import Header as CIMultiDict
 except ImportError:
     try:
         from sanic.server import CIMultiDict
@@ -255,17 +255,12 @@ def set_cors_headers(req, resp, context, options):
 
     LOG.debug('Settings CORS headers: %s', str(headers_to_set))
 
-    # dict .extend() does not work on CIDict so
-    # iterate over them and add them individually.
-    try:
-        resp.headers.extend(headers_to_set)
-    except Exception as e1:
-        for k, v in headers_to_set.items():
-            try:
-                resp.headers.add(k, v)
-            except Exception as e2:
-                resp.headers[k] = v
-        return resp
+    for k, v in headers_to_set.items():
+        try:
+            resp.headers.add(k, v)
+        except Exception as e2:
+            resp.headers[k] = v
+    return resp
 
 
 def probably_regex(maybe_regex):
