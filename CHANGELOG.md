@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.9.9
+Fix import of headers on latest Sanic versions
+
 ## 0.9.8.post3
 Bump minimum required Sanic-Plugins-Framework version to 0.8.2
  - This fixes compatibility with ASGI mode, as well as alternate server runners like gunicorn server runner.
