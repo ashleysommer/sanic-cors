@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.9.9.post3
+Revert previous patch. Sorry @donjar
+
 ## 0.9.9.post2
 Apply fix for async error handlers. Thanks @donjar
 
