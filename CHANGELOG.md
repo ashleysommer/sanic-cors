@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.9.9.post2
+Apply fix for async error handlers. Thanks @donjar
+
 ## 0.9.9.post1
 Actually fix import of headers on latest Sanic versions
 
