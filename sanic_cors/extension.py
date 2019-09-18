@@ -324,10 +324,12 @@ class CORSErrorHandler(ErrorHandler):
     # wrap app's original exception response function
     # so that error responses have proper CORS headers
     @classmethod
-    def wrapper(cls, f, ctx, req, e):
+    async def wrapper(cls, f, ctx, req, e):
         opts = ctx.options
         # get response from the original handler
         resp = f(req, e)
+        while isawaitable(resp):
+            resp = await resp
         # SanicExceptions are equiv to Flask Aborts,
         # always apply CORS to them.
         if (req is not None and resp is not None) and \
