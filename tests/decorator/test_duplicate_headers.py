@@ -33,7 +33,7 @@ class AllowsMultipleHeaderEntries(SanicCorsTestCase):
             resp = HTTPResponse(body="Foo bar baz")
             resp.headers = CIMultiDict()
             resp.headers['set-cookie'] = 'foo'
-            resp.headers['set-cookie'] = 'bar'
+            resp.headers.add('set-cookie', 'bar')
             return resp
 
     def test_multiple_set_cookie_headers(self):
@@ -53,7 +53,7 @@ class AllowsMultipleHeaderEntries(SanicCorsTestCase):
                 except AttributeError:
                     cookies = set(resp.headers.get('set-cookie').split(','))
         cookies = set(x.strip().lower() for x in cookies)
-        self.assertEqual(cookies, ('foo', 'bar'))
+        self.assertEqual(cookies, {'foo', 'bar'})
         self.assertEqual(len(cookies), 2)
 
 if __name__ == "__main__":
