@@ -16,21 +16,26 @@ from sanic.exceptions import NotFound, ServerError
 from sanic.response import text
 
 def add_routes(app):
-    @app.route('/test_no_acl_abort_404')
-    @app.route('/test_acl_abort_404')
+    #@app.route('/test_no_acl_abort_404')
+    #@app.route('/test_acl_abort_404')
     def test_acl_abort_404(request):
         raise NotFound("")
+    app.route('/test_no_acl_abort_404')(test_acl_abort_404)
+    app.route('/test_acl_abort_404')(test_acl_abort_404)
 
-    @app.route('/test_no_acl_async_abort_404')
-    @app.route('/test_acl_async_abort_404')
+    #@app.route('/test_no_acl_async_abort_404')
+    #@app.route('/test_acl_async_abort_404')
     async def test_acl_async_abort_404(request):
         raise NotFound("")
+    app.route('/test_no_acl_async_abort_404')(test_acl_async_abort_404)
+    app.route('/test_acl_async_abort_404')(test_acl_async_abort_404)
 
-
-    @app.route('/test_no_acl_abort_500')
-    @app.route('/test_acl_abort_500')
+    #@app.route('/test_no_acl_abort_500')
+    #@app.route('/test_acl_abort_500')
     def test_acl_abort_500(request):
         raise ServerError("")
+    app.route('/test_no_acl_abort_500')(test_acl_abort_500)
+    app.route('/test_acl_abort_500')(test_acl_abort_500)
 
     @app.route('/test_acl_uncaught_exception_500')
     def test_acl_uncaught_exception_500(request):

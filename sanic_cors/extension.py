@@ -11,8 +11,7 @@
 from functools import update_wrapper, partial
 from inspect import isawaitable
 
-import sanic
-from sanic import exceptions, response
+from sanic import exceptions, response, __version__ as sanic_version
 from sanic.handlers import ErrorHandler
 from spf import SanicPlugin
 from .core import *
@@ -20,8 +19,8 @@ from distutils.version import LooseVersion
 import logging
 
 
-SANIC_VERSION = LooseVersion(sanic.__version__)
-SANIC_0_7_0 = LooseVersion("0.7.0")
+SANIC_VERSION = LooseVersion(sanic_version)
+SANIC_18_12_0 = LooseVersion("18.12.0")
 
 
 class CORS(SanicPlugin):
@@ -136,8 +135,10 @@ class CORS(SanicPlugin):
     """
 
     def __init__(self, *args, **kwargs):
-        if SANIC_0_7_0 > SANIC_VERSION:
-            raise RuntimeError("You cannot use Sanic-CORS with sanic < v0.7.0")
+        if SANIC_18_12_0 > SANIC_VERSION:
+            raise RuntimeError(
+                "You cannot use this version of Sanic-CORS with "
+                "Sanic earlier than v18.12.0")
         super(CORS, self).__init__(*args, **kwargs)
 
 

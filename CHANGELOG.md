@@ -1,5 +1,13 @@
 # Change Log
 
+## 0.10.0.b1
+- New minimum supported sanic version is 18.12LTS
+- Fixed bugs with Sanic 19.12
+- Max supported sanic version for this release series is unknown for now.
+
+_**Note**_, Sanic v19.12.0 (and 19.12.2) _do not_ work with Sanic-CORS 0.9.9 series or earlier.
+A new version coming out soon will work with sanic v19.12.
+
 ## 0.9.9.post4
 This is the last version of sanic-cors to support Sanic 0.8.3
 - Update to Sanic 18.12LTS (or higher) to use future Sanic-CORS releases
