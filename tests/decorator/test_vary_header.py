@@ -5,7 +5,7 @@
     Sanic-CORS is a simple extension to Sanic allowing you to support cross
     origin resource sharing (CORS) using a simple decorator.
 
-    :copyright: (c) 2018 by Ashley Sommer (based on flask-cors by Cory Dolphin).
+    :copyright: (c) 2020 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
 
@@ -13,12 +13,15 @@ from ..base_test import SanicCorsTestCase
 from sanic import Sanic
 from sanic.response import HTTPResponse, text
 try:
+    # Sanic compat Header from Sanic v19.9.0 and above
     from sanic.compat import Header as CIMultiDict
 except ImportError:
     try:
+        # Sanic server CIMultiDict from Sanic v0.8.0 and above
         from sanic.server import CIMultiDict
     except ImportError:
-        from sanic.server import CIDict as CIMultiDict
+        raise RuntimeError("Your version of sanic does not support "
+                           "CIMultiDict")
 
 from sanic_cors import *
 
@@ -87,14 +90,23 @@ class VaryHeaderTestCase(SanicCorsTestCase):
 
         resp = self.get('/test_existing_vary_headers', origin="http://foo.com")
         try:
+            # Sanic compat Header, in 19.9.0 and above
             varys = set(resp.headers.get_all('Vary'))
         except AttributeError:
             try:
+                # Sanic CIMultiDict, in v0.8.0 and above
                 varys = set(resp.headers.getall('Vary'))
             except AttributeError:
-                varys = set([resp.headers.get('Vary')])
+                try:
+                    # Sanic Test Client in Sanic 19.12.0 and above.
+                    varys = set(resp.headers.getlist('Vary',
+                                                     split_commas=True))
+                except AttributeError:
+                    varys = set(resp.headers.get('Vary').split(','))
+        varys = set(x.strip().lower() for x in varys)
+
         self.assertEqual(varys,
-                         set(['Origin', 'Accept-Encoding']))
+                         set(['origin', 'accept-encoding']))
 
 if __name__ == "__main__":
     unittest.main()

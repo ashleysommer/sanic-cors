@@ -1,14 +1,14 @@
 """
 Sanic-Cors example
 ===================
-This is a tiny Sanic Application demonstrating Sanic-Cors, making it simple
+This is a tiny Sanic Application demonstrating Sanic-CORS, making it simple
 to add cross origin support to your sanic app!
 
-:copyright: (c) 2018 by Ashley Sommer (based on flask-cors by Cory Dolphin).
+:copyright: (c) 2020 by Ashley Sommer (based on flask-cors by Cory Dolphin).
 :license: MIT/X11, see LICENSE for more details.
 """
 from sanic import Sanic
-from sanic.response import json, text
+from sanic.response import json, html, text
 from sanic.exceptions import ServerError
 import logging
 try:
@@ -39,13 +39,15 @@ def hello_world(request):
         Since the path '/' does not match the regular expression r'/api/*',
         this route does not have CORS headers set.
     '''
-    return text('''
+    return html('''
 <html>
+    <head></head>
+    <body>
     <h1>Hello CORS!</h1>
     <h3> End to end editable example with jquery! </h3>
     <a class="jsbin-embed" href="http://jsbin.com/zazitas/embed?js,console">JS Bin on jsbin.com</a>
     <script src="//static.jsbin.com/js/embed.min.js?3.35.12"></script>
-
+    </body>
 </html>
 ''')
 
@@ -142,10 +144,10 @@ def get_exception(request):
     raise Exception("example")
 
 @app.exception(ServerError)
-def server_error(req, e):
+def server_error(request, e):
     logging.exception('An error occurred during a request. %s', e)
     return text("An internal error occured", status=500)
 
 
 if __name__ == "__main__":
-    app.run(debug=True, auto_reload=False)
+    app.run(port=5000, debug=True, auto_reload=False)

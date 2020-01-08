@@ -1,5 +1,15 @@
 # Change Log
 
+## 0.9.9.post4
+This is the last version of sanic-cors to support Sanic 0.8.3
+- Update to Sanic 18.12LTS (or higher) to use future Sanic-CORS releases
+
+Bump Sanic-Plugins-Framework to 0.8.2.post1 to fix a big.
+- This is also the last version of SPF to support Sanic 0.8.3
+
+_**Note**_, Sanic v19.12.0 (and 19.12.2) _do not_ work with Sanic-CORS 0.9.9 series or earlier.
+A new version coming out soon will work with sanic v19.12.
+
 ## 0.9.9.post3
 Revert previous patch. Sorry @donjar
 

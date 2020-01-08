@@ -4,7 +4,7 @@
     ~~~~
     Core functionality shared between the extension and the decorator.
 
-    :copyright: (c) 2019 by Ashley Sommer (based on flask-cors by Cory Dolphin).
+    :copyright: (c) 2020 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
 import re
@@ -12,12 +12,15 @@ import logging
 import collections
 from datetime import timedelta
 try:
+    # Sanic compat Header from Sanic v19.9.0 and above
     from sanic.compat import Header as CIMultiDict
 except ImportError:
     try:
+        # Sanic server CIMultiDict from Sanic v0.8.0 and above
         from sanic.server import CIMultiDict
     except ImportError:
-        from sanic.server import CIDict as CIMultiDict
+        raise RuntimeError("Your version of sanic does not support "
+                           "CIMultiDict")
 
 LOG = logging.getLogger(__name__)
 
