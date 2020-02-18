@@ -8,8 +8,6 @@ A Sanic extension for handling Cross Origin Resource Sharing (CORS),
 making cross-origin AJAX possible. Based on
 `flask-cors <https://github.com/corydolphin/flask-cors>`__ by Cory Dolphin.
 
-**Notice:** Sanic-CORS v0.9.9 *does not work* with Sanic v19.12. See `here <https://github.com/huge-success/sanic/issues/1749#issuecomment-571881532>`_ for more details.
-
 This package has a simple philosophy, when you want to enable CORS, you
 wish to enable it for all use cases on a domain. This means no mucking
 around with different allowed headers, methods, etc. By default,
@@ -18,6 +16,8 @@ implications, please see the documentation for how to enable
 credential'ed requests, and please make sure you add some sort of
 `CSRF <http://en.wikipedia.org/wiki/Cross-site_request_forgery>`__
 protection before doing so!
+
+**Notice:** Please upgrade to Sanic-CORS v0.10.0 if you need compatibility with Sanic v19.12+. See `here <https://github.com/huge-success/sanic/issues/1749#issuecomment-571881532>`_ for more details.
 
 Installation
 ------------

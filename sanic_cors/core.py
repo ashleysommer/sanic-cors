@@ -236,7 +236,7 @@ def set_cors_headers(req, resp, context, options):
     """
     try:
         request_context = context.request[id(req)]
-    except AttributeError:
+    except (AttributeError, LookupError):
         LOG.debug("Cannot find the request context. Is request already finished?")
         return resp
     # If CORS has already been evaluated via the decorator, skip

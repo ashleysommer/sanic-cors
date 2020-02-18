@@ -240,7 +240,7 @@ async def unapplied_cors_response_middleware(req, resp, context):
     debug = partial(log, logging.DEBUG)
     try:
         request_context = context.request[id(req)]
-    except AttributeError:
+    except (AttributeError, LookupError):
         debug("Cannot find the request context. Is request already finished?")
         return False
     # `resp` can be None or [] in the case of using Websockets
@@ -346,7 +346,7 @@ class CORSErrorHandler(ErrorHandler):
             try:
                 request_context = ctx.request[id(req)]
                 request_context[SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE] = "1"
-            except AttributeError:
+            except (LookupError, AttributeError):
                 log = ctx.log
                 log(logging.DEBUG,
                     "Cannot find the request context. "
