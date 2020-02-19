@@ -8,10 +8,12 @@
     :copyright: (c) 2020 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
+from asyncio import iscoroutinefunction
 from functools import update_wrapper, partial
 from inspect import isawaitable
 
 from sanic import exceptions, response, __version__ as sanic_version
+from sanic.exceptions import MethodNotSupported, NotFound
 from sanic.handlers import ErrorHandler
 from spf import SanicPlugin
 from .core import *
@@ -21,6 +23,9 @@ import logging
 
 SANIC_VERSION = LooseVersion(sanic_version)
 SANIC_18_12_0 = LooseVersion("18.12.0")
+SANIC_19_9_0 = LooseVersion("19.9.0")
+SANIC_19_12_0 = LooseVersion("19.12.0")
+
 
 
 class CORS(SanicPlugin):
@@ -207,9 +212,19 @@ class CORS(SanicPlugin):
             # resp can be `None` or `[]` if using Websockets
             if not resp:
                 return None
-        request_context = context.request[id(req)]
-        set_cors_headers(req, resp, context, options)
-        request_context[SANIC_CORS_EVALUATED] = "1"
+        try:
+            request_context = context.request[id(req)]
+        except (AttributeError, LookupError):
+            if SANIC_19_9_0 <= SANIC_VERSION:
+                request_context = req.ctx
+            else:
+                request_context = None
+        set_cors_headers(req, resp, request_context, options)
+        if request_context is not None:
+            setattr(request_context, SANIC_CORS_EVALUATED, "1")
+        else:
+            context.log(logging.DEBUG, "Cannot access a sanic request "
+                        "context. Has request started? Is request ended?")
         return resp
 
 def unapplied_cors_request_middleware(req, context):
@@ -227,9 +242,20 @@ def unapplied_cors_request_middleware(req, context):
                       "Using options: {}".format(
                        path, get_regexp_pattern(res_regex), res_options))
                 resp = response.HTTPResponse()
-                request_context = context.request[id(req)]
-                set_cors_headers(req, resp, context, res_options)
-                request_context[SANIC_CORS_EVALUATED] = "1"
+
+                try:
+                    request_context = context.request[id(req)]
+                except (AttributeError, LookupError):
+                    if SANIC_19_9_0 <= SANIC_VERSION:
+                        request_context = req.ctx
+                    else:
+                        request_context = None
+                        context.log(logging.DEBUG,
+                                    "Cannot access a sanic request "
+                                    "context. Has request started? Is request ended?")
+                set_cors_headers(req, resp, request_context, res_options)
+                if request_context is not None:
+                    setattr(req.ctx, SANIC_CORS_EVALUATED, "1")
                 return resp
         else:
             debug('No CORS rule matches')
@@ -238,23 +264,29 @@ def unapplied_cors_request_middleware(req, context):
 async def unapplied_cors_response_middleware(req, resp, context):
     log = context.log
     debug = partial(log, logging.DEBUG)
-    try:
-        request_context = context.request[id(req)]
-    except (AttributeError, LookupError):
-        debug("Cannot find the request context. Is request already finished?")
-        return False
     # `resp` can be None or [] in the case of using Websockets
     if not resp:
         return False
-    if request_context.get(SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE):
-        debug('CORS was handled in the exception handler, skipping')
-        return False
+    try:
+        request_context = context.request[id(req)]
+    except (AttributeError, LookupError):
+        if SANIC_19_9_0 <= SANIC_VERSION:
+            request_context = req.ctx
+        else:
+            debug("Cannot find the request context. "
+                  "Is request already finished? Is request not started?")
+            request_context = None
+    if request_context is not None:
+        # If CORS headers are set in the CORS error handler
+        if getattr(request_context,
+                   SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE, False):
+            debug('CORS was handled in the exception handler, skipping')
+            return False
 
-    # If CORS headers are set in a view decorator, pass
-    elif request_context.get(SANIC_CORS_EVALUATED):
-        debug('CORS have been already evaluated, skipping')
-        return False
-
+        # If CORS headers are set in a view decorator, pass
+        elif getattr(request_context, SANIC_CORS_EVALUATED, False):
+            debug('CORS have been already evaluated, skipping')
+            return False
     try:
         path = req.path
     except AttributeError:
@@ -265,8 +297,9 @@ async def unapplied_cors_response_middleware(req, resp, context):
         if try_match(path, res_regex):
             debug("Request to '{}' matches CORS resource '{:s}'. Using options: {}".format(
                   path, get_regexp_pattern(res_regex), res_options))
-            set_cors_headers(req, resp, context, res_options)
-            request_context[SANIC_CORS_EVALUATED] = "1"
+            set_cors_headers(req, resp, request_context, res_options)
+            if request_context is not None:
+                setattr(request_context, SANIC_CORS_EVALUATED, "1")
             break
     else:
         debug('No CORS rule matches')
@@ -296,6 +329,13 @@ class CORSErrorHandler(ErrorHandler):
             resources = ctx.resources
             log = ctx.log
             debug = partial(log, logging.DEBUG)
+            try:
+                request_context = ctx.request[id(req)]
+            except (AttributeError, LookupError):
+                if SANIC_19_9_0 <= SANIC_VERSION:
+                    request_context = req.ctx
+                else:
+                    request_context = None
             for res_regex, res_options in resources:
                 if try_match(path, res_regex):
                     debug(
@@ -303,7 +343,7 @@ class CORSErrorHandler(ErrorHandler):
                         "Using options: {}".format(
                             path, get_regexp_pattern(res_regex),
                             res_options))
-                    set_cors_headers(req, resp, ctx, res_options)
+                    set_cors_headers(req, resp, request_context, res_options)
                     break
             else:
                 debug('No CORS rule matches')
@@ -325,10 +365,13 @@ class CORSErrorHandler(ErrorHandler):
     # wrap app's original exception response function
     # so that error responses have proper CORS headers
     @classmethod
-    def wrapper(cls, f, ctx, req, e):
+    async def wrapper(cls, f, ctx, req, e):
         opts = ctx.options
         # get response from the original handler
+        do_await = iscoroutinefunction(f)
         resp = f(req, e)
+        if do_await:
+            resp = await resp
         # SanicExceptions are equiv to Flask Aborts,
         # always apply CORS to them.
         if (req is not None and resp is not None) and \
@@ -340,22 +383,34 @@ class CORSErrorHandler(ErrorHandler):
                 # not sure why certain exceptions doesn't have
                 # an accompanying request
                 pass
-        if req is not None:
-            # These exceptions have normal CORS middleware applied automatically.
-            # So set a flag to skip our manual application of the middleware.
-            try:
-                request_context = ctx.request[id(req)]
-                request_context[SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE] = "1"
-            except (LookupError, AttributeError):
+        if req is None:
+            return resp
+        # These exceptions have normal CORS middleware applied automatically.
+        # So set a flag to skip our manual application of the middleware.
+        try:
+            request_context = ctx.request[id(req)]
+        except (LookupError, AttributeError):
+            # On Sanic 19.12.0, a NotFound error can be thrown _before_
+            # the request_context is set up. This is a fallback routine:
+            if SANIC_19_12_0 <= SANIC_VERSION and \
+                    isinstance(e, (NotFound, MethodNotSupported)):
+                # On sanic 19.9.0+ request is a dict, so we can add our
+                # flag directly to it.
+                request_context = req.ctx
+            else:
                 log = ctx.log
                 log(logging.DEBUG,
-                    "Cannot find the request context. "
+                    "Cannot find the request context. Is request started? "
                     "Is request already finished?")
+                request_context = None
+        if request_context is not None:
+            setattr(request_context,
+                    SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE, "1")
         return resp
 
-    def response(self, request, exception):
+    async def response(self, request, exception):
         orig_resp_handler = self.orig_handler.response
-        return self.wrapper(orig_resp_handler, self.ctx, request, exception)
+        return await self.wrapper(orig_resp_handler, self.ctx, request, exception)
 
 instance = cors = CORS()
 __all__ = ["cors", "CORS"]

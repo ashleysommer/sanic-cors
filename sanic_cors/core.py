@@ -224,26 +224,22 @@ def get_cors_headers(options, request_headers, request_method):
     return CIMultiDict((k, v) for k, v in headers.items() if v)
 
 
-def set_cors_headers(req, resp, context, options):
+def set_cors_headers(req, resp, req_context, options):
     """
     Performs the actual evaluation of Sanic-CORS options and actually
     modifies the response object.
 
-    This function is used both in the decorator and the after_request
-    callback
+    This function is used in the decorator, the CORS exception wrapper,
+    and the after_request callback
     :param sanic.request.Request req:
 
     """
-    try:
-        request_context = context.request[id(req)]
-    except (AttributeError, LookupError):
-        LOG.debug("Cannot find the request context. Is request already finished?")
-        return resp
     # If CORS has already been evaluated via the decorator, skip
-    evaluated = request_context.get(SANIC_CORS_EVALUATED, False)
-    if evaluated:
-        LOG.debug('CORS have been already evaluated, skipping')
-        return resp
+    if req_context is not None:
+        evaluated = getattr(req_context, SANIC_CORS_EVALUATED, False)
+        if evaluated:
+            LOG.debug('CORS have been already evaluated, skipping')
+            return resp
 
     # `resp` can be None or [] in the case of using Websockets
     # however this case should have been handled in the `extension` and `decorator` methods
