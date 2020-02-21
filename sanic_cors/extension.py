@@ -26,7 +26,7 @@ SANIC_18_12_0 = LooseVersion("18.12.0")
 SANIC_19_9_0 = LooseVersion("19.9.0")
 SANIC_19_12_0 = LooseVersion("19.12.0")
 
-
+USE_ASYNC_EXCEPTION_HANDLER = False
 
 class CORS(SanicPlugin):
     __slots__ = tuple()
@@ -350,6 +350,14 @@ class CORSErrorHandler(ErrorHandler):
         else:
             pass
 
+    def __new__(cls, *args, **kwargs):
+        self = super(CORSErrorHandler, cls).__new__(cls)
+        if USE_ASYNC_EXCEPTION_HANDLER:
+            self.response = self.async_response
+        else:
+            self.response = self.sync_response
+        return self
+
     def __init__(self, context, orig_handler):
         super(CORSErrorHandler, self).__init__()
         self.orig_handler = orig_handler
@@ -365,13 +373,17 @@ class CORSErrorHandler(ErrorHandler):
     # wrap app's original exception response function
     # so that error responses have proper CORS headers
     @classmethod
-    async def wrapper(cls, f, ctx, req, e):
+    def wrapper(cls, f, ctx, req, e):
         opts = ctx.options
+        log = ctx.log
         # get response from the original handler
         do_await = iscoroutinefunction(f)
         resp = f(req, e)
         if do_await:
-            resp = await resp
+            log(logging.DEBUG,
+                "Found an async Exception handler response. "
+                "Cannot apply CORS to it. Passing it on.")
+            return resp
         # SanicExceptions are equiv to Flask Aborts,
         # always apply CORS to them.
         if (req is not None and resp is not None) and \
@@ -398,7 +410,6 @@ class CORSErrorHandler(ErrorHandler):
                 # flag directly to it.
                 request_context = req.ctx
             else:
-                log = ctx.log
                 log(logging.DEBUG,
                     "Cannot find the request context. Is request started? "
                     "Is request already finished?")
@@ -408,9 +419,14 @@ class CORSErrorHandler(ErrorHandler):
                     SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE, "1")
         return resp
 
-    async def response(self, request, exception):
+    async def async_response(self, request, exception):
         orig_resp_handler = self.orig_handler.response
         return await self.wrapper(orig_resp_handler, self.ctx, request, exception)
+
+    def sync_response(self, request, exception):
+        orig_resp_handler = self.orig_handler.response
+        return self.wrapper(orig_resp_handler, self.ctx, request, exception)
+
 
 instance = cors = CORS()
 __all__ = ["cors", "CORS"]

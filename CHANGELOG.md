@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.10.0.post2
+- Fixes the issue where the sanic asyncio server write_error routine cannot use an async Exception handler.
+- Fixes #38 (again)
+
 ## 0.10.0.post1
 - Fixed the errors seen in Sanic 19.12+ where the CORS exception handler could be triggered
   _before_ the request context for a given request is created.
