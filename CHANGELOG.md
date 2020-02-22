@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.10.0.post3
+- Fixes another issue introduced with Sanic 19.12, where automatic_options cannot work when the router is run before 
+  the Sanic-CORS middleware
+
 ## 0.10.0.post2
 - Fixes the issue where the sanic asyncio server write_error routine cannot use an async Exception handler.
 - Fixes #38 (again)

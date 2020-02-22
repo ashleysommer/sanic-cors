@@ -203,7 +203,7 @@ class CORS(SanicPlugin):
         _ = decorator_kw.pop('with_context')  # ignore this.
         _options = decorator_kw
         options = get_cors_options(context.app, _options)
-        if options.get('automatic_options') and req.method == 'OPTIONS':
+        if options.get('automatic_options', True) and req.method == 'OPTIONS':
             resp = response.HTTPResponse()
         else:
             resp = route(req, *request_args, **request_kw)
@@ -237,10 +237,11 @@ def unapplied_cors_request_middleware(req, context):
         log = context.log
         debug = partial(log, logging.DEBUG)
         for res_regex, res_options in resources:
-            if res_options.get('automatic_options') and try_match(path, res_regex):
+            if res_options.get('automatic_options', True) and \
+                    try_match(path, res_regex):
                 debug("Request to '{:s}' matches CORS resource '{}'. "
                       "Using options: {}".format(
-                       path, get_regexp_pattern(res_regex), res_options))
+                        path, get_regexp_pattern(res_regex), res_options))
                 resp = response.HTTPResponse()
 
                 try:
@@ -377,13 +378,20 @@ class CORSErrorHandler(ErrorHandler):
         opts = ctx.options
         log = ctx.log
         # get response from the original handler
-        do_await = iscoroutinefunction(f)
-        resp = f(req, e)
-        if do_await:
-            log(logging.DEBUG,
-                "Found an async Exception handler response. "
-                "Cannot apply CORS to it. Passing it on.")
-            return resp
+        if (req is not None and SANIC_19_12_0 <= SANIC_VERSION and
+              isinstance(e, MethodNotSupported) and req.method == "OPTIONS" and
+              opts.get('automatic_options', True)):
+            # A very specific set of requirments to trigger this kind of
+            # automatic-options resp
+            resp = response.HTTPResponse()
+        else:
+            do_await = iscoroutinefunction(f)
+            resp = f(req, e)
+            if do_await:
+                log(logging.DEBUG,
+                    "Found an async Exception handler response. "
+                    "Cannot apply CORS to it. Passing it on.")
+                return resp
         # SanicExceptions are equiv to Flask Aborts,
         # always apply CORS to them.
         if (req is not None and resp is not None) and \
