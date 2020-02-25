@@ -256,7 +256,7 @@ def unapplied_cors_request_middleware(req, context):
                                     "context. Has request started? Is request ended?")
                 set_cors_headers(req, resp, request_context, res_options)
                 if request_context is not None:
-                    setattr(req.ctx, SANIC_CORS_EVALUATED, "1")
+                    setattr(request_context, SANIC_CORS_EVALUATED, "1")
                 return resp
         else:
             debug('No CORS rule matches')

@@ -120,8 +120,9 @@ via the options method, Sanic by default only allows the ``GET`` method, in orde
 service your CORS requests you must specify ``OPTIONS`` in the methods argument to
 your routes decorator.
 
-Alternately, you can use the ``automatic_options`` configuration parameter to
-handle the ``OPTIONS`` response automatically for you.
+Sanic-CORS includes an ``automatic_options`` configuration parameter to
+allow the plugin handle the ``OPTIONS`` response automatically for you. This is enabled by default, but you
+can turn it off if you wish to do your own ``OPTIONS`` response.
 
 .. code:: python
 
