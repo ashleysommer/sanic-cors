@@ -387,7 +387,7 @@ class CORSErrorHandler(ErrorHandler):
         else:
             do_await = iscoroutinefunction(f)
             resp = f(req, e)
-            # asycn Exceptions may be awaitable and should be returned
+            # async Exceptions may be awaitable and should be returned
             # TODO: iscoroutinefunction may not work as intended for async Exceptions
             if isawaitable(resp):
                 log(logging.DEBUG,
