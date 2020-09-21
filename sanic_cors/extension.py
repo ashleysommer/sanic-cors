@@ -388,13 +388,7 @@ class CORSErrorHandler(ErrorHandler):
             do_await = iscoroutinefunction(f)
             resp = f(req, e)
             # async Exceptions may be awaitable and should be returned
-            # TODO: iscoroutinefunction may not work as intended for async Exceptions
-            if isawaitable(resp):
-                log(logging.DEBUG,
-                    "Found an async Exception handler response. "
-                    "Cannot apply CORS to it. Passing it on.")
-                return resp
-            if do_await:
+            if isawaitable(resp) or do_await:
                 log(logging.DEBUG,
                     "Found an async Exception handler response. "
                     "Cannot apply CORS to it. Passing it on.")
