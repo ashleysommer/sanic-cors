@@ -45,3 +45,4 @@ pip-log.txt
 .directory
 venv36/
 venv35/
+.venv/

@@ -1,14 +1,14 @@
 sudo: false
-dist: xenial
+dist: bionic
 cache:
   - pip
 language: python
 python:
-  - '3.6'
+  - '3.7'
 env:
-  - SANIC=19.12.2 SPF=0.9.1
+  - SANIC=21.3.1 SPTK=1.0.0
 install:
-  - pip install -U setuptools pep8 coverage docutils pygments aiohttp sanic==$SANIC sanic-plugins-framework==$SPF
+  - pip install -U setuptools pep8 coverage docutils pygments aiohttp sanic==$SANIC sanic-plugin-toolkit==$SPTK
 script:
   - coverage erase
   - nosetests --with-coverage --cover-package=sanic_cors

@@ -10,7 +10,7 @@ to add cross origin support to your sanic app!
 from sanic import Sanic
 from sanic.response import json, text
 from sanic.exceptions import ServerError
-from spf import SanicPluginsFramework
+from sanic_plugin_toolkit import SanicPluginRealm
 import logging
 
 app = Sanic('SanicCorsAppBasedExample')
@@ -19,12 +19,12 @@ logging.basicConfig(level=logging.INFO)
 # To enable logging for sanic-cors,
 logging.getLogger('sanic_cors').level = logging.DEBUG
 
-app.config['SPF_LOAD_INI'] = True
-app.config['SPF_INI_FILE'] = 'spf_cors.ini'
-spf = SanicPluginsFramework(app)
+app.config['SPTK_LOAD_INI'] = True
+app.config['SPTK_INI_FILE'] = 'sptk_cors.ini'
+realm = SanicPluginRealm(app)
 
-# We can get the assoc object from SPF, it is already registered
-assoc = spf.get_plugin_assoc('CORS')
+# We can get the assoc object from SPTK, it is now already registered
+assoc = realm.get_plugin_assoc('CORS')
 
 
 @app.route("/")

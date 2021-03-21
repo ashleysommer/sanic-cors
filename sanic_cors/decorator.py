@@ -6,11 +6,11 @@
     Sanic route with. It accepts all parameters and options as
     the CORS extension.
 
-    :copyright: (c) 2020 by Ashley Sommer (based on flask-cors by Cory Dolphin).
+    :copyright: (c) 2021 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
 
-from spf import SanicPluginsFramework
+from sanic_plugin_toolkit import SanicPluginRealm
 from .core import *
 from .extension import cors
 
@@ -105,14 +105,14 @@ def cross_origin(app, *args, **kwargs):
     _real_decorator = cors.decorate(app, *args, run_middleware=False, with_context=False, **kwargs)
 
     def wrapped_decorator(f):
-        spf = SanicPluginsFramework(app)  # get the singleton from the app
+        realm = SanicPluginRealm(app)  # get the singleton from the app
         try:
-            plugin = spf.register_plugin(cors, skip_reg=True)
+            plugin = realm.register_plugin(cors, skip_reg=True)
         except ValueError as e:
             # this is normal, if this plugin has been registered previously
             assert e.args and len(e.args) > 1
             plugin = e.args[1]
-        context = cors.get_context_from_spf(spf)
+        context = cors.get_context_from_realm(realm)
         log = context.log
         log(logging.DEBUG, "Enabled {:s} for cross_origin using options: {}".format(str(f), str(_options)))
         return _real_decorator(f)

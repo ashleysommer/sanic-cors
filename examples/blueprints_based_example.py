@@ -107,8 +107,8 @@ on <a href="https://github.com/ashleysommer/sanic-cors">Github</a>''')
 
 logging.basicConfig(level=logging.INFO)
 app = Sanic('SanicCorsBlueprintBasedExample')
-app.register_blueprint(api_v1)
-app.register_blueprint(public_routes)
+app.blueprint(api_v1)
+app.blueprint(public_routes)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.0.0
+- Replace Sanic-Plugins-Framework (SPF) with Sanic-Plugin-Toolkit (SPTK)
+- Remove python 3.6 compatibility
+- Remove Pre-Sanic-21.3 compatibility
+- If you need to use sanic <= 21.3, use the Sanic-CORS v0.10 branch 
+
 ## 0.10.0.post3
 - Fixes another issue introduced with Sanic 19.12, where automatic_options cannot work when the router is run before 
   the Sanic-CORS middleware

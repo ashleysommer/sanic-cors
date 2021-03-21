@@ -17,7 +17,11 @@ credential'ed requests, and please make sure you add some sort of
 `CSRF <http://en.wikipedia.org/wiki/Cross-site_request_forgery>`__
 protection before doing so!
 
-**Notice:** Please upgrade to Sanic-CORS v0.10.0 if you need compatibility with Sanic v19.12+. See `here <https://github.com/huge-success/sanic/issues/1749#issuecomment-571881532>`_ for more details.
+**Notice:**
+Please upgrade to Sanic-CORS v1.0.0 if you need compatibility with Sanic v21.3+ (and don't forget to replace SPF with SPTK)
+
+**Older Notice:**
+Please upgrade to Sanic-CORS v0.10.0 if you need compatibility with Sanic v19.12+. See `here <https://github.com/huge-success/sanic/issues/1749#issuecomment-571881532>`_ for more details.
 
 Installation
 ------------
@@ -85,22 +89,22 @@ with. Simply add ``@cross_origin(app)`` below a call to Sanic's
     def hello_world(request):
       return text("Hello, cross-origin-world!")
 
-SPF Usage
+SPTK Usage
 ~~~~~~~~~~~~
 
-Sanic-CORS uses Sanic-Plugins-Framework behind the scenes.
-That means you can use SPF to load the plugin for you if you are
-orchestrating and application with multiple SPF plugins.
+Sanic-CORS uses Sanic-Plugin-Toolkit behind the scenes.
+That means you can use the SPTK api to load the plugin for you if you are
+orchestrating and application with multiple SPTK plugins.
 
 .. code:: python
 
     from sanic import Sanic
     from sanic.response import text
-    from spf import SanicPluginsFramework
+    from sanic_plugin_toolkit import SanicPluginRealm
     from sanic_cors.extension import cors
     app = Sanic(__name__)
-    spf = SanicPluginsFramework(app)
-    spf.register_plugin(cors, automatic_options=True)
+    realm = SanicPluginRealm(app)
+    realm.register_plugin(cors, automatic_options=True)
 
     @app.route("/", methods=['GET', 'OPTIONS'])
     def hello_world(request):

@@ -5,7 +5,7 @@
     Sanic-CORS is a simple extension to Sanic allowing you to support cross
     origin resource sharing (CORS) using a simple decorator.
 
-    :copyright: (c) 2020 by Ashley Sommer (based on flask-cors by Cory Dolphin).
+    :copyright: (c) 2021 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
 from asyncio import iscoroutinefunction
@@ -15,7 +15,7 @@ from inspect import isawaitable
 from sanic import exceptions, response, __version__ as sanic_version
 from sanic.exceptions import MethodNotSupported, NotFound
 from sanic.handlers import ErrorHandler
-from spf import SanicPlugin
+from sanic_plugin_toolkit import SanicPlugin
 from .core import *
 from distutils.version import LooseVersion
 import logging
