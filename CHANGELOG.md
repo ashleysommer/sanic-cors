@@ -1,5 +1,8 @@
 # Change Log
-
+## 1.0.1
+- Fix exception handler compatibility with Sanic v21.9.0
+- Bump min SPTK version requirement to v1.2.0
+ 
 ## 1.0.0
 - Replace Sanic-Plugins-Framework (SPF) with Sanic-Plugin-Toolkit (SPTK)
 - Remove python 3.6 compatibility

@@ -17,7 +17,10 @@ credential'ed requests, and please make sure you add some sort of
 `CSRF <http://en.wikipedia.org/wiki/Cross-site_request_forgery>`__
 protection before doing so!
 
-**Notice:**
+**Sept Notice:**
+Please upgrade to Sanic-CORS v1.0.1 if you need compatibility with Sanic v21.9+
+
+**March Notice:**
 Please upgrade to Sanic-CORS v1.0.0 if you need compatibility with Sanic v21.3+ (and don't forget to replace SPF with SPTK)
 
 **Older Notice:**

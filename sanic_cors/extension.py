@@ -25,6 +25,8 @@ SANIC_VERSION = LooseVersion(sanic_version)
 SANIC_18_12_0 = LooseVersion("18.12.0")
 SANIC_19_9_0 = LooseVersion("19.9.0")
 SANIC_19_12_0 = LooseVersion("19.12.0")
+SANIC_21_9_0 = LooseVersion("21.9.0")
+
 
 USE_ASYNC_EXCEPTION_HANDLER = False
 
@@ -190,11 +192,10 @@ class CORS(SanicPlugin):
         resources_human = dict([(get_regexp_pattern(pattern), opts)
                                 for (pattern, opts) in resources])
         debug("Configuring CORS with resources: {}".format(resources_human))
-        try:
-            assert app.error_handler
-            cors_error_handler = CORSErrorHandler(context, app.error_handler)
-            app.error_handler = cors_error_handler
-        except (AttributeError, AssertionError):
+        if hasattr(app, "error_handler"):
+            cors_error_handler = CORSErrorHandler(context, app.error_handler, fallback="auto")
+            setattr(app, "error_handler", cors_error_handler)
+        else:
             # Blueprints have no error_handler. Just skip error_handler initialisation
             pass
 
@@ -359,18 +360,26 @@ class CORSErrorHandler(ErrorHandler):
             self.response = self.sync_response
         return self
 
-    def __init__(self, context, orig_handler):
-        super(CORSErrorHandler, self).__init__()
+    def __init__(self, context, orig_handler, fallback="auto"):
+        if SANIC_21_9_0 <= SANIC_VERSION:
+            super(CORSErrorHandler, self).__init__(fallback=fallback)
+        else:
+            super(CORSErrorHandler, self).__init__()
         self.orig_handler = orig_handler
         self.ctx = context
 
-    def add(self, exception, handler):
-        self.orig_handler.add(exception, handler)
+    if SANIC_21_9_0 <= SANIC_VERSION:
+        def add(self, exception, handler, route_names = None):
+            self.orig_handler.add(exception, handler, route_names=route_names)
 
-    def lookup(self, exception):
-        return self.orig_handler.lookup(exception)
+        def lookup(self, exception, route_name=None):
+            return self.orig_handler.lookup(exception, route_name=route_name)
+    else:
+        def add(self, exception, handler):
+            self.orig_handler.add(exception, handler)
 
-
+        def lookup(self, exception):
+            return self.orig_handler.lookup(exception)
     # wrap app's original exception response function
     # so that error responses have proper CORS headers
     @classmethod
