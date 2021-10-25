@@ -179,7 +179,7 @@ class AppExtensionRegexp(SanicCorsTestCase):
                                             origin=domain):
                 self.assertEqual(domain, resp.headers.get(ACL_ORIGIN))
 
-        self.assertEquals("http://example.com",
+        self.assertEqual("http://example.com",
             self.get('/test_regex_mixed_list', origin='http://example.com').headers.get(ACL_ORIGIN))
 
 

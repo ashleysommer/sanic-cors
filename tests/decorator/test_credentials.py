@@ -41,7 +41,7 @@ class SupportsCredentialsCase(SanicCorsTestCase):
             Access-Control-Allow-Credentials header.
         '''
         resp = self.get('/test_credentials_supported', origin='www.example.com')
-        self.assertEquals(resp.headers.get(ACL_CREDENTIALS), 'true')
+        self.assertEqual(resp.headers.get(ACL_CREDENTIALS), 'true')
 
     def test_default(self):
         ''' The default behavior should be to disallow credentials.
