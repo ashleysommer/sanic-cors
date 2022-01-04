@@ -21,7 +21,7 @@ letters = 'abcdefghijklmnopqrstuvwxyz'  # string.letters is not PY3 compatible
 
 class AppExtensionRegexp(SanicCorsTestCase):
     def setUp(self):
-        self.app = Sanic(__name__)
+        self.app = Sanic(__name__.replace(".","-"))
         CORS(self.app, resources={
             r'/test_list': {'origins': ["http://foo.com", "http://bar.com"]},
             r'/test_string': {'origins': 'http://foo.com'},
@@ -185,7 +185,7 @@ class AppExtensionRegexp(SanicCorsTestCase):
 
 class AppExtensionList(SanicCorsTestCase):
     def setUp(self):
-        self.app = Sanic(__name__)
+        self.app = Sanic(__name__.replace(".","-"))
         CORS(self.app, resources=[r'/test_exposed', r'/test_other_exposed'],
              origins=['http://foo.com', 'http://bar.com'])
 
@@ -219,7 +219,7 @@ class AppExtensionList(SanicCorsTestCase):
 
 class AppExtensionString(SanicCorsTestCase):
     def setUp(self):
-        self.app = Sanic(__name__)
+        self.app = Sanic(__name__.replace(".","-"))
         CORS(self.app, resources=r'/api/*',
              headers='Content-Type',
              expose_headers='X-Total-Count',
@@ -277,7 +277,7 @@ class AppExtensionString(SanicCorsTestCase):
 class AppExtensionError(SanicCorsTestCase):
     def test_value_error(self):
         try:
-            app = Sanic(__name__)
+            app = Sanic(__name__.replace(".","-"))
             CORS(app, resources=5)
             self.assertTrue(False, "Should've raised a value error")
         except ValueError:
@@ -290,7 +290,7 @@ class AppExtensionDefault(SanicCorsTestCase):
             By default match all.
         '''
 
-        self.app = Sanic(__name__)
+        self.app = Sanic(__name__.replace(".","-"))
         CORS(self.app)
 
         @self.app.route('/', methods=['GET', 'HEAD', 'OPTIONS'])
@@ -304,7 +304,7 @@ class AppExtensionDefault(SanicCorsTestCase):
 
 class AppExtensionExampleApp(SanicCorsTestCase):
     def setUp(self):
-        self.app = Sanic(__name__)
+        self.app = Sanic(__name__.replace(".","-"))
         CORS(self.app, resources={
             r'/api/*': {'origins': ['http://blah.com', 'http://foo.bar']}
         })
@@ -356,7 +356,7 @@ class AppExtensionCompiledRegexp(SanicCorsTestCase):
             expression.
         '''
         import re
-        self.app = Sanic(__name__)
+        self.app = Sanic(__name__.replace(".","-"))
         CORS(self.app, resources=re.compile('/api/.*'))
 
         @self.app.route('/', methods=['GET', 'HEAD', 'OPTIONS'])
@@ -381,7 +381,7 @@ class AppExtensionBadRegexp(SanicCorsTestCase):
             expression.
         '''
 
-        self.app = Sanic(__name__)
+        self.app = Sanic(__name__.replace(".","-"))
         CORS(self.app, resources="[")
 
         @self.app.route('/', methods=['GET', 'HEAD', 'OPTIONS'])

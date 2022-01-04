@@ -48,7 +48,7 @@ def add_routes(app):
 
 class ExceptionInterceptionDefaultTestCase(SanicCorsTestCase):
     def setUp(self):
-        self.app = Sanic(__name__)
+        self.app = Sanic(__name__.replace(".","-"))
         CORS(self.app, resources={
             r'/test_acl*': {},
         })
@@ -183,7 +183,7 @@ class ExceptionInterceptionDefaultTestCase(SanicCorsTestCase):
 class NoExceptionInterceptionTestCase(ExceptionInterceptionDefaultTestCase):
 
     def setUp(self):
-        self.app = Sanic(__name__)
+        self.app = Sanic(__name__.replace(".","-"))
         CORS(self.app,
              intercept_exceptions=False,
              resources={

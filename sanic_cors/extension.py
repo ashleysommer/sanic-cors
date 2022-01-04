@@ -5,33 +5,43 @@
     Sanic-CORS is a simple extension to Sanic allowing you to support cross
     origin resource sharing (CORS) using a simple decorator.
 
-    :copyright: (c) 2021 by Ashley Sommer (based on flask-cors by Cory Dolphin).
+    :copyright: (c) 2022 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
 from asyncio import iscoroutinefunction
 from functools import update_wrapper, partial
 from inspect import isawaitable
+from types import SimpleNamespace
+from typing import Optional, Dict
 
-from sanic import exceptions, response, __version__ as sanic_version
+from sanic import Sanic, exceptions, response, __version__ as sanic_version, Blueprint
 from sanic.exceptions import MethodNotSupported, NotFound
 from sanic.handlers import ErrorHandler
-from sanic_plugin_toolkit import SanicPlugin
+from sanic.log import logger
+from sanic.models.futures import FutureMiddleware
+
 from .core import *
 from distutils.version import LooseVersion
 import logging
 
 
-SANIC_VERSION = LooseVersion(sanic_version)
-SANIC_18_12_0 = LooseVersion("18.12.0")
-SANIC_19_9_0 = LooseVersion("19.9.0")
-SANIC_19_12_0 = LooseVersion("19.12.0")
-SANIC_21_9_0 = LooseVersion("21.9.0")
+try:
+    import sanic_ext
+    from sanic_ext.extensions.base import Extension
+    from sanic_ext.config import Config
+    use_ext = True
+except ImportError:
+    use_ext = False
+    Extension = object
+    from sanic.config import Config
 
+
+SANIC_VERSION = LooseVersion(sanic_version)
+SANIC_21_9_0 = LooseVersion("21.9.0")
 
 USE_ASYNC_EXCEPTION_HANDLER = False
 
-class CORS(SanicPlugin):
-    __slots__ = tuple()
+class CORS(Extension):
     """
     Initializes Cross Origin Resource sharing for the application. The
     arguments are identical to :py:func:`cross_origin`, with the addition of a
@@ -141,32 +151,59 @@ class CORS(SanicPlugin):
     :type vary_header: bool
     """
 
-    def __init__(self, *args, **kwargs):
-        if SANIC_18_12_0 > SANIC_VERSION:
+    name: str = "SanicCORS"
+
+    def __init__(self, app: Sanic, config: Optional[Config] = None, *args, **kwargs):
+        if SANIC_21_9_0 > SANIC_VERSION:
             raise RuntimeError(
                 "You cannot use this version of Sanic-CORS with "
-                "Sanic earlier than v18.12.0")
-        super(CORS, self).__init__(*args, **kwargs)
+                "Sanic earlier than v21.9.0")
+        self._options = kwargs
+        if use_ext:
+            super(CORS, self).__init__(app, config)
+        else:
+            super(CORS, self).__init__(*args)
+            self.app = app
+            self.config = config or {}
+            bootstrap = SimpleNamespace()
+            bootstrap.app = self.app
+            bootstrap.config = self.config
+            self.startup(bootstrap)
+
+    def log(self, level, message, *args, exc_info=None, **kwargs):
+        msg = f"Sanic-CORS: {message}"
+        logger.log(level, msg, *args, exc_info=exc_info, **kwargs)
 
 
-    def on_before_registered(self, context, *args, **kwargs):
-        context._options = kwargs
-        if not CORS.on_before_registered.has_run:
-            # debug = partial(context.log, logging.DEBUG)
-            _ = _make_cors_request_middleware_function(self)
-            _ = _make_cors_response_middleware_function(self)
-            CORS.on_before_registered.has_run = True
+    def label(self):
+        return "Sanic-CORS"
 
-    on_before_registered.has_run = False
+    def startup(self, bootstrap):
+        """
+        Used by sanic-ext to start up an extension
+        """
+        assert bootstrap.app == self.app
+        _options = self._options
+        cors_options = _options or bootstrap.config.get("CORS_OPTIONS", {})
+        no_startup = cors_options.pop("no_startup", None)
+        if no_startup:
+            return
+        self.app.ctx.sanic_cors = context = SimpleNamespace()
+        context._options = cors_options
+        context.log = self.log
+        # turn off built-in sanic-ext CORS
+        bootstrap.config["CORS"] = False
+        self.init_app(context)
 
-
-    def on_registered(self, context, *args, **kwargs):
-        # this will need to be called more than once, for every app it is registered on.
-        self.init_app(context, *args, **kwargs)
-
+    def on_before_server_start(self, app, loop=None):
+        # use self.app instead of app, because self.app might be a blueprint
+        context = self.app.ctx.sanic_cors
+        if not isinstance(self.app, Blueprint):
+            _ = _make_cors_request_middleware_function(self.app, context=context)
+            _ = _make_cors_response_middleware_function(self.app, context=context)
 
     def init_app(self, context, *args, **kwargs):
-        app = context.app
+        app = self.app
         log = context.log
         _options = context._options
         debug = partial(log, logging.DEBUG)
@@ -192,18 +229,22 @@ class CORS(SanicPlugin):
         resources_human = dict([(get_regexp_pattern(pattern), opts)
                                 for (pattern, opts) in resources])
         debug("Configuring CORS with resources: {}".format(resources_human))
-        if hasattr(app, "error_handler"):
-            cors_error_handler = CORSErrorHandler(context, app.error_handler, fallback="auto")
-            setattr(app, "error_handler", cors_error_handler)
-        else:
-            # Blueprints have no error_handler. Just skip error_handler initialisation
-            pass
 
-    async def route_wrapper(self, route, req, context, request_args, request_kw,
+        if isinstance(app, Blueprint):
+            # skip error handler override on a blueprint
+            # register the middlewares early, on a blueprint
+            _make_cors_request_middleware_function(app, context=context)
+            _make_cors_response_middleware_function(app, context=context)
+        else:
+            if hasattr(app, "error_handler"):
+                cors_error_handler = CORSErrorHandler(context, app.error_handler, fallback="auto")
+                setattr(app, "error_handler", cors_error_handler)
+            app.listener("before_server_start")(self.on_before_server_start)
+
+    async def route_wrapper(self, route, req, app, request_args, request_kw,
                             *decorator_args, **decorator_kw):
-        _ = decorator_kw.pop('with_context')  # ignore this.
         _options = decorator_kw
-        options = get_cors_options(context.app, _options)
+        options = get_cors_options(app, _options)
         if options.get('automatic_options', True) and req.method == 'OPTIONS':
             resp = response.HTTPResponse()
         else:
@@ -214,21 +255,18 @@ class CORS(SanicPlugin):
             if not resp:
                 return None
         try:
-            request_context = context.request[id(req)]
+            request_context = req.ctx
         except (AttributeError, LookupError):
-            if SANIC_19_9_0 <= SANIC_VERSION:
-                request_context = req.ctx
-            else:
-                request_context = None
+            request_context = None
         set_cors_headers(req, resp, request_context, options)
         if request_context is not None:
             setattr(request_context, SANIC_CORS_EVALUATED, "1")
         else:
-            context.log(logging.DEBUG, "Cannot access a sanic request "
+            logging.log(logging.DEBUG, "Cannot access a sanic request "
                         "context. Has request started? Is request ended?")
         return resp
 
-def unapplied_cors_request_middleware(req, context):
+def unapplied_cors_request_middleware(req, context=None):
     if req.method == 'OPTIONS':
         try:
             path = req.path
@@ -246,15 +284,10 @@ def unapplied_cors_request_middleware(req, context):
                 resp = response.HTTPResponse()
 
                 try:
-                    request_context = context.request[id(req)]
+                    request_context = req.ctx
                 except (AttributeError, LookupError):
-                    if SANIC_19_9_0 <= SANIC_VERSION:
-                        request_context = req.ctx
-                    else:
-                        request_context = None
-                        context.log(logging.DEBUG,
-                                    "Cannot access a sanic request "
-                                    "context. Has request started? Is request ended?")
+                    request_context = None
+                    context.log(logging.DEBUG, "Cannot access a sanic request context. Has request started? Is request ended?")
                 set_cors_headers(req, resp, request_context, res_options)
                 if request_context is not None:
                     setattr(request_context, SANIC_CORS_EVALUATED, "1")
@@ -263,21 +296,17 @@ def unapplied_cors_request_middleware(req, context):
             debug('No CORS rule matches')
 
 
-async def unapplied_cors_response_middleware(req, resp, context):
+async def unapplied_cors_response_middleware(req, resp, context=None):
     log = context.log
     debug = partial(log, logging.DEBUG)
     # `resp` can be None or [] in the case of using Websockets
     if not resp:
         return False
     try:
-        request_context = context.request[id(req)]
+        request_context = req.ctx
     except (AttributeError, LookupError):
-        if SANIC_19_9_0 <= SANIC_VERSION:
-            request_context = req.ctx
-        else:
-            debug("Cannot find the request context. "
-                  "Is request already finished? Is request not started?")
-            request_context = None
+        debug("Cannot find the request context. Is request already finished? Is request not started?")
+        request_context = None
     if request_context is not None:
         # If CORS headers are set in the CORS error handler
         if getattr(request_context,
@@ -306,19 +335,35 @@ async def unapplied_cors_response_middleware(req, resp, context):
     else:
         debug('No CORS rule matches')
 
-def _make_cors_request_middleware_function(plugin):
-    applied_cors_request_middleware = plugin.middleware(
-        relative="pre", attach_to='request', with_context=True)\
-        (unapplied_cors_request_middleware)
-    return applied_cors_request_middleware
+def _make_cors_request_middleware_function(app, context=None):
+    mw = update_wrapper(partial(unapplied_cors_request_middleware, context=context), unapplied_cors_request_middleware)
+    future_middleware = FutureMiddleware(mw, "request")
+    if isinstance(app, Blueprint):
+        bp = app
+        if bp.registered:
+            context.log(logging.WARNING, "Blueprint is already registered, cannot put the CORS middleware at the start of the chain.")
+            bp.middleware("request")(mw)
+        else:
+            bp._future_middleware.insert(0, future_middleware)
+    else:
+        # Put at start of request middlewares
+        app._future_middleware.insert(0, future_middleware)
+        app.request_middleware.appendleft(mw)
 
-
-def _make_cors_response_middleware_function(plugin):
-    applied_cors_response_middleware = plugin.middleware(
-        relative="post", attach_to='response', with_context=True)\
-        (unapplied_cors_response_middleware)
-    return applied_cors_response_middleware
-
+def _make_cors_response_middleware_function(app, context=None):
+    mw = update_wrapper(partial(unapplied_cors_response_middleware, context=context), unapplied_cors_request_middleware)
+    future_middleware = FutureMiddleware(mw, "response")
+    if isinstance(app, Blueprint):
+        bp = app
+        if bp.registered:
+            context.log(logging.WARNING, "Blueprint is already registered, adding CORS response middleware to end of the chain.")
+            bp.middleware("request")(mw)
+        else:
+            bp._future_middleware.append(future_middleware)
+    else:
+        # Put at start of end of response middlewares
+        app._future_middleware.append(future_middleware)
+        app.response_middleware.append(mw)
 
 class CORSErrorHandler(ErrorHandler):
     @classmethod
@@ -332,12 +377,9 @@ class CORSErrorHandler(ErrorHandler):
             log = ctx.log
             debug = partial(log, logging.DEBUG)
             try:
-                request_context = ctx.request[id(req)]
+                request_context = req.ctx
             except (AttributeError, LookupError):
-                if SANIC_19_9_0 <= SANIC_VERSION:
-                    request_context = req.ctx
-                else:
-                    request_context = None
+                request_context = None
             for res_regex, res_options in resources:
                 if try_match(path, res_regex):
                     debug(
@@ -361,40 +403,34 @@ class CORSErrorHandler(ErrorHandler):
         return self
 
     def __init__(self, context, orig_handler, fallback="auto"):
-        if SANIC_21_9_0 <= SANIC_VERSION:
-            super(CORSErrorHandler, self).__init__(fallback=fallback)
-        else:
-            super(CORSErrorHandler, self).__init__()
+        super(CORSErrorHandler, self).__init__(fallback=fallback)
         self.orig_handler = orig_handler
         self.ctx = context
 
-    if SANIC_21_9_0 <= SANIC_VERSION:
-        def add(self, exception, handler, route_names = None):
-            self.orig_handler.add(exception, handler, route_names=route_names)
+    def add(self, exception, handler, route_names=None):
+        self.orig_handler.add(exception, handler, route_names=route_names)
 
-        def lookup(self, exception, route_name=None):
-            return self.orig_handler.lookup(exception, route_name=route_name)
-    else:
-        def add(self, exception, handler):
-            self.orig_handler.add(exception, handler)
+    def lookup(self, exception, route_name=None):
+        return self.orig_handler.lookup(exception, route_name=route_name)
 
-        def lookup(self, exception):
-            return self.orig_handler.lookup(exception)
     # wrap app's original exception response function
     # so that error responses have proper CORS headers
     @classmethod
     def wrapper(cls, f, ctx, req, e):
         opts = ctx.options
         log = ctx.log
-        # get response from the original handler
-        if (req is not None and SANIC_19_12_0 <= SANIC_VERSION and
+
+        # Check if we got an error because method was OPTIONS,
+        # but that wasn't listed in methods, but we have automatic_options enabled
+        if (req is not None and
               isinstance(e, MethodNotSupported) and req.method == "OPTIONS" and
               opts.get('automatic_options', True)):
-            # A very specific set of requirments to trigger this kind of
+            # A very specific set of requirements to trigger this kind of
             # automatic-options resp
             resp = response.HTTPResponse()
         else:
             do_await = iscoroutinefunction(f)
+            # get response from the original handler
             resp = f(req, e)
             if do_await:
                 log(logging.DEBUG,
@@ -417,20 +453,15 @@ class CORSErrorHandler(ErrorHandler):
         # These exceptions have normal CORS middleware applied automatically.
         # So set a flag to skip our manual application of the middleware.
         try:
-            request_context = ctx.request[id(req)]
+            request_context = req.ctx
         except (LookupError, AttributeError):
             # On Sanic 19.12.0, a NotFound error can be thrown _before_
             # the request_context is set up. This is a fallback routine:
-            if SANIC_19_12_0 <= SANIC_VERSION and \
-                    isinstance(e, (NotFound, MethodNotSupported)):
-                # On sanic 19.9.0+ request is a dict, so we can add our
-                # flag directly to it.
-                request_context = req.ctx
-            else:
+            if not isinstance(e, (NotFound, MethodNotSupported)):
                 log(logging.DEBUG,
                     "Cannot find the request context. Is request started? "
                     "Is request already finished?")
-                request_context = None
+            request_context = None
         if request_context is not None:
             setattr(request_context,
                     SANIC_CORS_SKIP_RESPONSE_MIDDLEWARE, "1")
@@ -444,6 +475,3 @@ class CORSErrorHandler(ErrorHandler):
         orig_resp_handler = self.orig_handler.response
         return self.wrapper(orig_resp_handler, self.ctx, request, exception)
 
-
-instance = cors = CORS()
-__all__ = ["cors", "CORS"]

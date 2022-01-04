@@ -4,7 +4,7 @@ Sanic-Cors example
 This is a tiny Sanic Application demonstrating Sanic-CORS, making it simple
 to add cross origin support to your sanic app!
 
-:copyright: (c) 2020 by Ashley Sommer (based on flask-cors by Cory Dolphin).
+:copyright: (c) 2022 by Ashley Sommer (based on flask-cors by Cory Dolphin).
 :license: MIT/X11, see LICENSE for more details.
 """
 from sanic import Sanic
@@ -22,15 +22,11 @@ except ImportError:
 
 
 app = Sanic('SanicCorsAppBasedExample')
-logging.basicConfig(level=logging.INFO)
-
-# To enable logging for sanic-cors,
-logging.getLogger('sanic_cors').level = logging.DEBUG
 
 # One of the simplest configurations. Exposes all resources matching /api/* to
 # CORS and allows the Content-Type header, which is necessary to POST JSON
 # cross origin.
-CORS(app, resources=r'/api/*')
+CORS(app, resources=r'/api/*', origins="*", methods=["GET", "POST", "HEAD", "OPTIONS"])
 
 
 @app.route("/")
@@ -51,7 +47,7 @@ def hello_world(request):
 </html>
 ''')
 
-@app.route("/api/v1/users/", methods=['GET', 'OPTIONS'])
+@app.route("/api/v1/users/", methods=['GET'])
 def list_users(request):
     '''
         Since the path matches the regular expression r'/api/*', this resource

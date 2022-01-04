@@ -1,4 +1,11 @@
 # Change Log
+## 2.0.0
+- Big changes for Sanic v21.12.0
+- Remove the use of Sanic-Plugin-Toolkit.
+  - This plugin is simple enough that it doesn't need it
+  - Sanic-Plugin-Toolkit has issues with compatibility in Sanic v21.12.0+
+- Add ability to use sanic-cors as a Sanic-Ext extension (experimental for now...)
+
 ## 1.0.1
 - Fix exception handler compatibility with Sanic v21.9.0
 - Bump min SPTK version requirement to v1.2.0

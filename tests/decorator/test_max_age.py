@@ -20,7 +20,7 @@ from sanic_cors.core import *
 
 class MaxAgeTestCase(SanicCorsTestCase):
     def setUp(self):
-        self.app = Sanic(__name__)
+        self.app = Sanic(__name__.replace(".","-"))
 
         @self.app.route('/defaults')
         @cross_origin(self.app)

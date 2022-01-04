@@ -4,7 +4,7 @@ Sanic-Cors example
 This is a tiny Sanic Application demonstrating Sanic-Cors, making it simple
 to add cross origin support to your sanic app!
 
-:copyright: (c) 2020 by Ashley Sommer (based on flask-cors by Cory Dolphin).
+:copyright: (c) 2022 by Ashley Sommer (based on flask-cors by Cory Dolphin).
 :license:   MIT/X11, see LICENSE for more details.
 """
 from sanic import Sanic
@@ -23,8 +23,6 @@ except ImportError:
 
 
 app = Sanic('SanicCorsViewBasedExample')
-logging.basicConfig(level=logging.INFO)
-
 
 @app.route("/", methods=['GET', 'OPTIONS'])
 @cross_origin(app, automatic_options=True)

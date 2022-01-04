@@ -1,31 +1,31 @@
 """
 Sanic-Cors example
 ===================
-This is a tiny Sanic Application demonstrating Sanic-Cors, making it simple
+This is a tiny Sanic Application demonstrating Sanic-CORS, making it simple
 to add cross origin support to your sanic app!
 
-:copyright: (c) 2020 by Ashley Sommer (based on flask-cors by Cory Dolphin).
+:copyright: (c) 2022 by Ashley Sommer (based on flask-cors by Cory Dolphin).
 :license: MIT/X11, see LICENSE for more details.
 """
 from sanic import Sanic
-from sanic.response import json, text
+from sanic.response import json, html, text
 from sanic.exceptions import ServerError
-from sanic_plugin_toolkit import SanicPluginRealm
 import logging
+try:
+    from sanic_cors import CORS  # The typical way to import sanic-cors
+except ImportError:
+    # Path hack allows examples to be run without installation.
+    import os
+    parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    os.sys.path.insert(0, parentdir)
+    from sanic_cors import CORS
+
+from sanic_ext import Extend
 
 app = Sanic('SanicCorsAppBasedExample')
-logging.basicConfig(level=logging.INFO)
-
-# To enable logging for sanic-cors,
-logging.getLogger('sanic_cors').level = logging.DEBUG
-
-app.config['SPTK_LOAD_INI'] = True
-app.config['SPTK_INI_FILE'] = 'sptk_cors.ini'
-realm = SanicPluginRealm(app)
-
-# We can get the assoc object from SPTK, it is now already registered
-assoc = realm.get_plugin_assoc('CORS')
-
+CORS_OPTIONS = {"resources": r'/api/*', "origins": "*", "methods": ["GET", "POST", "HEAD", "OPTIONS"]}
+# Disable sanic-ext built-in CORS, and add the Sanic-CORS plugin
+Extend(app, extensions=[CORS], config={"CORS": False, "CORS_OPTIONS": CORS_OPTIONS})
 
 @app.route("/")
 def hello_world(request):
@@ -33,13 +33,15 @@ def hello_world(request):
         Since the path '/' does not match the regular expression r'/api/*',
         this route does not have CORS headers set.
     '''
-    return text('''
+    return html('''
 <html>
+    <head></head>
+    <body>
     <h1>Hello CORS!</h1>
     <h3> End to end editable example with jquery! </h3>
     <a class="jsbin-embed" href="http://jsbin.com/zazitas/embed?js,console">JS Bin on jsbin.com</a>
     <script src="//static.jsbin.com/js/embed.min.js?3.35.12"></script>
-
+    </body>
 </html>
 ''')
 
@@ -136,10 +138,10 @@ def get_exception(request):
     raise Exception("example")
 
 @app.exception(ServerError)
-def server_error(req, e):
+def server_error(request, e):
     logging.exception('An error occurred during a request. %s', e)
     return text("An internal error occured", status=500)
 
 
 if __name__ == "__main__":
-    app.run(debug=True, auto_reload=False)
+    app.run(port=5000, debug=True, auto_reload=False)

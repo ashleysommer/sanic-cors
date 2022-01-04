@@ -18,7 +18,7 @@ from sanic_cors.core import *
 
 class OptionsTestCase(SanicCorsTestCase):
     def setUp(self):
-        self.app = Sanic(__name__)
+        self.app = Sanic(__name__.replace(".","-"))
 
         @self.app.route('/test_default', methods=['OPTIONS'])
         @cross_origin(self.app)

@@ -20,7 +20,7 @@ letters = 'abcdefghijklmnopqrstuvwxyz'  # string.letters is not PY3 compatible
 
 class OriginsTestCase(SanicCorsTestCase):
     def setUp(self):
-        self.app = Sanic(__name__)
+        self.app = Sanic(__name__.replace(".","-"))
 
         @self.app.route('/', methods=['GET', 'HEAD', 'OPTIONS'])
         @cross_origin(self.app)

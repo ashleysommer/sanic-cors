@@ -17,13 +17,14 @@ credential'ed requests, and please make sure you add some sort of
 `CSRF <http://en.wikipedia.org/wiki/Cross-site_request_forgery>`__
 protection before doing so!
 
-**Sept Notice:**
-Please upgrade to Sanic-CORS v1.0.1 if you need compatibility with Sanic v21.9+
+**December 2021 Notice:**
+If you need compatibility with Sanic v21.12+, upgrade to Sanic-CORS v2.0
 
-**March Notice:**
-Please upgrade to Sanic-CORS v1.0.0 if you need compatibility with Sanic v21.3+ (and don't forget to replace SPF with SPTK)
+**Sept 2021 Notice:**
+Please upgrade to Sanic-CORS v1.0.1 if you need compatibility with Sanic v21.9,<21.12
 
 **Older Notice:**
+Please upgrade to Sanic-CORS v1.0.0 if you need compatibility with Sanic v21.3+ (and don't forget to replace SPF with SPTK)
 Please upgrade to Sanic-CORS v0.10.0 if you need compatibility with Sanic v19.12+. See `here <https://github.com/huge-success/sanic/issues/1749#issuecomment-571881532>`_ for more details.
 
 Installation
@@ -92,22 +93,22 @@ with. Simply add ``@cross_origin(app)`` below a call to Sanic's
     def hello_world(request):
       return text("Hello, cross-origin-world!")
 
-SPTK Usage
-~~~~~~~~~~~~
+Sanic-Ext Usage
+~~~~~~~~~~~~~~~
 
-Sanic-CORS uses Sanic-Plugin-Toolkit behind the scenes.
-That means you can use the SPTK api to load the plugin for you if you are
-orchestrating and application with multiple SPTK plugins.
+Sanic-CORS can use Sanic-Ext to load the plugin for you.
+( But you need to make sure to disable the built-in sanic-ext CORS support too)
 
 .. code:: python
 
     from sanic import Sanic
     from sanic.response import text
-    from sanic_plugin_toolkit import SanicPluginRealm
-    from sanic_cors.extension import cors
+    from sanic_ext import Extend
+    from sanic_cors.extension import CORS
     app = Sanic(__name__)
-    realm = SanicPluginRealm(app)
-    realm.register_plugin(cors, automatic_options=True)
+    CORS_OPTIONS = {"resources": r'/*', "origins": "*", "methods": ["GET", "POST", "HEAD", "OPTIONS"]}
+    # Disable sanic-ext built-in CORS, and add the Sanic-CORS plugin
+    Extend(app, extensions=[CORS], config={"CORS": False, "CORS_OPTIONS": CORS_OPTIONS})
 
     @app.route("/", methods=['GET', 'OPTIONS'])
     def hello_world(request):
@@ -171,16 +172,6 @@ Note: For the third example, you must use ``@route()``, rather than
 ``@delete()`` because you need to enable both ``DELETE`` and ``OPTIONS`` to
 work on that route, even though the decorator is handling the ``OPTIONS``
 response.
-
-Troubleshooting
----------------
-
-If things aren't working as you expect, enable logging to help understand
-what is going on under the hood, and why.
-
-.. code:: python
-
-    logging.getLogger('sanic_cors').level = logging.DEBUG
 
 Tests
 -----

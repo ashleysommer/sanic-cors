@@ -16,7 +16,7 @@ from sanic_cors.core import *
 
 class ResponseHeadersOverrideTestCaseIntegration(SanicCorsTestCase):
     def setUp(self):
-        self.app = Sanic(__name__)
+        self.app = Sanic("test_override_headers")
         CORS(self.app)
 
         @self.app.route('/', methods=['GET', 'HEAD', 'OPTIONS'])

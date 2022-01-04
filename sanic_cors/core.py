@@ -4,7 +4,7 @@
     ~~~~
     Core functionality shared between the extension and the decorator.
 
-    :copyright: (c) 2021 by Ashley Sommer (based on flask-cors by Cory Dolphin).
+    :copyright: (c) 2022 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
 import re

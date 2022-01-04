@@ -19,7 +19,7 @@ from sanic_cors.core import *
 
 class SupportsCredentialsCase(SanicCorsTestCase):
     def setUp(self):
-        self.app = Sanic(__name__)
+        self.app = Sanic(__name__.replace(".","-"))
 
         @self.app.route('/test_credentials_supported')
         @cross_origin(self.app, supports_credentials=True)

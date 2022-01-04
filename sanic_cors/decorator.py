@@ -6,13 +6,14 @@
     Sanic route with. It accepts all parameters and options as
     the CORS extension.
 
-    :copyright: (c) 2021 by Ashley Sommer (based on flask-cors by Cory Dolphin).
+    :copyright: (c) 2022 by Ashley Sommer (based on flask-cors by Cory Dolphin).
     :license: MIT, see LICENSE for more details.
 """
+from functools import wraps
 
-from sanic_plugin_toolkit import SanicPluginRealm
+from sanic.log import logger
 from .core import *
-from .extension import cors
+from .extension import CORS
 
 
 def cross_origin(app, *args, **kwargs):
@@ -101,20 +102,16 @@ def cross_origin(app, *args, **kwargs):
     :type automatic_options: bool
 
     """
-    _options = kwargs
-    _real_decorator = cors.decorate(app, *args, run_middleware=False, with_context=False, **kwargs)
+    decorator_kwargs = kwargs
+    decorator_args = args
+    #_real_decorator = cors.decorate(app, *args, run_middleware=False, with_context=False, **kwargs)
+    cors = CORS(app, no_startup=True)
+    def wrapper(f):
+        @wraps(f)
+        async def inner(request, *args, **kwargs):
+            return await cors.route_wrapper(f, request, app, args, kwargs, *decorator_args, **decorator_kwargs)
 
-    def wrapped_decorator(f):
-        realm = SanicPluginRealm(app)  # get the singleton from the app
-        try:
-            plugin = realm.register_plugin(cors, skip_reg=True)
-        except ValueError as e:
-            # this is normal, if this plugin has been registered previously
-            assert e.args and len(e.args) > 1
-            plugin = e.args[1]
-        context = cors.get_context_from_realm(realm)
-        log = context.log
-        log(logging.DEBUG, "Enabled {:s} for cross_origin using options: {}".format(str(f), str(_options)))
-        return _real_decorator(f)
+        logger.log(logging.DEBUG, "Enabled {:s} for cross_origin using options: {}".format(str(f), str(decorator_kwargs)))
+        return inner
 
-    return wrapped_decorator
+    return wrapper

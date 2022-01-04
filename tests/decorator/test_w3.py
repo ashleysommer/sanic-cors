@@ -18,7 +18,7 @@ from sanic_cors.core import *
 
 class OriginsW3TestCase(SanicCorsTestCase):
     def setUp(self):
-        self.app = Sanic(__name__)
+        self.app = Sanic(__name__.replace(".","-"))
 
         @self.app.route('/', methods=['GET', 'HEAD', 'OPTIONS'])
         @cross_origin(self.app, origins='*', send_wildcard=False, always_send=False)
