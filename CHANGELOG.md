@@ -1,4 +1,7 @@
 # Change Log
+## 2.0.1
+- Fix constructor of CORSErrorHandler, to remove 22.6 deprecation warning. Fixes #57
+
 ## 2.0.0
 - Big changes for Sanic v21.12.0
 - Remove the use of Sanic-Plugin-Toolkit.

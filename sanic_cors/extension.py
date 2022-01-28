@@ -237,7 +237,7 @@ class CORS(Extension):
             _make_cors_response_middleware_function(app, context=context)
         else:
             if hasattr(app, "error_handler"):
-                cors_error_handler = CORSErrorHandler(context, app.error_handler, fallback="auto")
+                cors_error_handler = CORSErrorHandler(context, app.error_handler)
                 setattr(app, "error_handler", cors_error_handler)
             app.listener("before_server_start")(self.on_before_server_start)
 
@@ -402,8 +402,8 @@ class CORSErrorHandler(ErrorHandler):
             self.response = self.sync_response
         return self
 
-    def __init__(self, context, orig_handler, fallback="auto"):
-        super(CORSErrorHandler, self).__init__(fallback=fallback)
+    def __init__(self, context, orig_handler):
+        super(CORSErrorHandler, self).__init__()
         self.orig_handler = orig_handler
         self.ctx = context
 
