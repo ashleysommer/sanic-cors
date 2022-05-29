@@ -21,7 +21,7 @@ from sanic.log import logger
 from sanic.models.futures import FutureMiddleware
 
 from .core import *
-from distutils.version import LooseVersion
+from packaging.version import Version
 import logging
 
 
@@ -36,8 +36,8 @@ except ImportError:
     from sanic.config import Config
 
 
-SANIC_VERSION = LooseVersion(sanic_version)
-SANIC_21_9_0 = LooseVersion("21.9.0")
+SANIC_VERSION = Version(sanic_version)
+SANIC_21_9_0 = Version("21.9.0")
 
 USE_ASYNC_EXCEPTION_HANDLER = False
 
