@@ -97,7 +97,7 @@ Sanic-Ext Usage
 ~~~~~~~~~~~~~~~
 
 Sanic-CORS can use Sanic-Ext to load the plugin for you.
-( But you need to make sure to disable the built-in sanic-ext CORS support too)
+(But you need to make sure to disable the built-in sanic-ext CORS support too)
 
 .. code:: python
 

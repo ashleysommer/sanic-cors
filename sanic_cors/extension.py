@@ -21,7 +21,7 @@ from sanic.log import logger
 from sanic.models.futures import FutureMiddleware
 
 from .core import *
-from distutils.version import LooseVersion
+from packaging.version import Version
 import logging
 
 
@@ -29,15 +29,18 @@ try:
     import sanic_ext
     from sanic_ext.extensions.base import Extension
     from sanic_ext.config import Config
+    SANIC_EXT_VERSION = Version(sanic_ext.__version__)
     use_ext = True
 except ImportError:
     use_ext = False
     Extension = object
+    SANIC_EXT_VERSION = Version("0.0.0")
     from sanic.config import Config
 
 
-SANIC_VERSION = LooseVersion(sanic_version)
-SANIC_21_9_0 = LooseVersion("21.9.0")
+SANIC_VERSION = Version(sanic_version)
+SANIC_21_9_0 = Version("21.9.0")
+SANIC_EXT_22_6_0 = Version("22.6.0")
 
 USE_ASYNC_EXCEPTION_HANDLER = False
 
@@ -153,14 +156,20 @@ class CORS(Extension):
 
     name: str = "SanicCORS"
 
-    def __init__(self, app: Sanic, config: Optional[Config] = None, *args, **kwargs):
+    def __init__(self, app: Optional[Sanic] = None, config: Optional[Config] = None, *args, **kwargs):
         if SANIC_21_9_0 > SANIC_VERSION:
             raise RuntimeError(
                 "You cannot use this version of Sanic-CORS with "
                 "Sanic earlier than v21.9.0")
         self._options = kwargs
         if use_ext:
-            super(CORS, self).__init__(app, config)
+            if SANIC_EXT_22_6_0 > SANIC_EXT_VERSION:
+                if app is None:
+                    raise RuntimeError("Sanic-CORS Extension not registered on app properly. "
+                                       "Please upgrade to newer sanic-ext version.")
+                super(CORS, self).__init__(app, config)
+            else:
+                super(CORS, self).__init__()
         else:
             super(CORS, self).__init__(*args)
             self.app = app
@@ -182,7 +191,8 @@ class CORS(Extension):
         """
         Used by sanic-ext to start up an extension
         """
-        assert bootstrap.app == self.app
+        if bootstrap.app != self.app:
+            raise RuntimeError("Sanic-CORS bootstrap got the wrong app instance. Is sanic-ext enabled properly?")
         _options = self._options
         cors_options = _options or bootstrap.config.get("CORS_OPTIONS", {})
         no_startup = cors_options.pop("no_startup", None)

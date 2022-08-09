@@ -1,4 +1,9 @@
 # Change Log
+
+## 2.1.0
+- Fix compatibility with Sanic-EXT v22.6.0+
+- Replace deprecated setuptools/`distutils` dependency with `packaging`
+
 ## 2.0.1
 - Fix constructor of CORSErrorHandler, to remove 22.6 deprecation warning. Fixes #57
 
