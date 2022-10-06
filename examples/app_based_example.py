@@ -139,6 +139,10 @@ def get_exception(request):
     '''
     raise Exception("example")
 
+@app.middleware("response")
+def test_it(request, response):
+    print(request)
+
 @app.exception(ServerError)
 def server_error(request, e):
     logging.exception('An error occurred during a request. %s', e)

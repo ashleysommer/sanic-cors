@@ -37,9 +37,15 @@ except ImportError:
     SANIC_EXT_VERSION = Version("0.0.0")
     from sanic.config import Config
 
+try:
+    from sanic.middleware import Middleware, MiddlewareLocation
+except ImportError:
+    Middleware = object
+    MiddlewareLocation = object
 
 SANIC_VERSION = Version(sanic_version)
 SANIC_21_9_0 = Version("21.9.0")
+SANIC_22_9_0 = Version("22.9.0")
 SANIC_EXT_22_6_0 = Version("22.6.0")
 
 USE_ASYNC_EXCEPTION_HANDLER = False
@@ -208,7 +214,7 @@ class CORS(Extension):
     def on_before_server_start(self, app, loop=None):
         # use self.app instead of app, because self.app might be a blueprint
         context = self.app.ctx.sanic_cors
-        if not isinstance(self.app, Blueprint):
+        if not isinstance(self.app, Blueprint) and (SANIC_22_9_0 > SANIC_VERSION):
             _ = _make_cors_request_middleware_function(self.app, context=context)
             _ = _make_cors_response_middleware_function(self.app, context=context)
 
@@ -249,7 +255,13 @@ class CORS(Extension):
             if hasattr(app, "error_handler"):
                 cors_error_handler = CORSErrorHandler(context, app.error_handler)
                 setattr(app, "error_handler", cors_error_handler)
-            app.listener("before_server_start")(self.on_before_server_start)
+            if SANIC_22_9_0 > SANIC_VERSION:
+                app.listener("before_server_start")(self.on_before_server_start)
+            else:
+                # Sanic >= v22.9.0 cannot set routes in before_server_start
+                # so run it now (we can assign priorities, so should be fine)
+                _make_cors_request_middleware_function(app, context=context)
+                _make_cors_response_middleware_function(app, context=context)
 
     async def route_wrapper(self, route, req, app, request_args, request_kw,
                             *decorator_args, **decorator_kw):
@@ -347,7 +359,12 @@ async def unapplied_cors_response_middleware(req, resp, context=None):
 
 def _make_cors_request_middleware_function(app, context=None):
     mw = update_wrapper(partial(unapplied_cors_request_middleware, context=context), unapplied_cors_request_middleware)
-    future_middleware = FutureMiddleware(mw, "request")
+    if SANIC_22_9_0 <= SANIC_VERSION:
+        new_mw = Middleware(mw, MiddlewareLocation.REQUEST, priority=99)
+    else:
+        new_mw = mw
+
+    future_middleware = FutureMiddleware(new_mw, "request")
     if isinstance(app, Blueprint):
         bp = app
         if bp.registered:
@@ -358,11 +375,15 @@ def _make_cors_request_middleware_function(app, context=None):
     else:
         # Put at start of request middlewares
         app._future_middleware.insert(0, future_middleware)
-        app.request_middleware.appendleft(mw)
+        app.request_middleware.appendleft(new_mw)
 
 def _make_cors_response_middleware_function(app, context=None):
     mw = update_wrapper(partial(unapplied_cors_response_middleware, context=context), unapplied_cors_request_middleware)
-    future_middleware = FutureMiddleware(mw, "response")
+    if SANIC_22_9_0 <= SANIC_VERSION:
+        new_mw = Middleware(mw, MiddlewareLocation.RESPONSE, priority=999)
+    else:
+        new_mw = mw
+    future_middleware = FutureMiddleware(new_mw, "response")
     if isinstance(app, Blueprint):
         bp = app
         if bp.registered:
@@ -373,7 +394,7 @@ def _make_cors_response_middleware_function(app, context=None):
     else:
         # Put at start of end of response middlewares
         app._future_middleware.append(future_middleware)
-        app.response_middleware.append(mw)
+        app.response_middleware.append(new_mw)
 
 class CORSErrorHandler(ErrorHandler):
     @classmethod

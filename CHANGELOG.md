@@ -1,5 +1,8 @@
 # Change Log
 
+## 2.2.0b1
+- Quick dirty fix for new middleware-registry behaviour on sanic v22.9.0
+
 ## 2.1.0
 - Fix compatibility with Sanic-EXT v22.6.0+
 - Replace deprecated setuptools/`distutils` dependency with `packaging`
