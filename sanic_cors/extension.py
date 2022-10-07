@@ -358,7 +358,20 @@ async def unapplied_cors_response_middleware(req, resp, context=None):
         debug('No CORS rule matches')
 
 def _make_cors_request_middleware_function(app, context=None):
+    """If app is a blueprint, this function is executed when the CORS extension is initialized, it can insert
+    the middleware into the correct location in the blueprint's future_middleware at any time.
+    If app is a Sanic server, this function is executed by the before_server_start callback, it inserts the middleware
+    at the correct location at that point in time.
+    The exception is with Sanic v22.9+, middlwares are finalized _before_  the before_server_start event, so we must
+    run this function at plugin initialization time, but v22.9+ has priorities, so it can be inserted with priority.
+    """
     mw = update_wrapper(partial(unapplied_cors_request_middleware, context=context), unapplied_cors_request_middleware)
+    _old_name = getattr(mw, "__name__", None)
+    if _old_name:
+        setattr(mw, "__name__", str(_old_name).replace("unapplied_", ""))
+    _old_qname = getattr(mw, "__qualname__", None)
+    if _old_qname:
+        setattr(mw, "__qualname__", str(_old_qname).replace("unapplied_", ""))
     if SANIC_22_9_0 <= SANIC_VERSION:
         new_mw = Middleware(mw, MiddlewareLocation.REQUEST, priority=99)
     else:
@@ -378,7 +391,20 @@ def _make_cors_request_middleware_function(app, context=None):
         app.request_middleware.appendleft(new_mw)
 
 def _make_cors_response_middleware_function(app, context=None):
+    """If app is a blueprint, this function is executed when the CORS extension is initialized, it can insert
+    the middleware into the correct location in the blueprint's future_middleware at any time.
+    If app is a Sanic server, this function is executed by the before_server_start callback, it inserts the middleware
+    at the correct location at that point in time.
+    The exception is with Sanic v22.9+, middlwares are finalized _before_  the before_server_start event, so we must
+    run this function at plugin initialization time, but v22.9+ has priorities, so it can be inserted with priority.
+    """
     mw = update_wrapper(partial(unapplied_cors_response_middleware, context=context), unapplied_cors_request_middleware)
+    _old_name = getattr(mw, "__name__", None)
+    if _old_name:
+        setattr(mw, "__name__", str(_old_name).replace("unapplied_", ""))
+    _old_qname = getattr(mw, "__qualname__", None)
+    if _old_qname:
+        setattr(mw, "__qualname__", str(_old_qname).replace("unapplied_", ""))
     if SANIC_22_9_0 <= SANIC_VERSION:
         new_mw = Middleware(mw, MiddlewareLocation.RESPONSE, priority=999)
     else:

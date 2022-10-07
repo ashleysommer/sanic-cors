@@ -1,5 +1,9 @@
 # Change Log
 
+## 2.2.0
+- Quick dirty fix for new middleware-registry behaviour on sanic v22.9.0, fixes #64
+- Vary 'Origin' header will be added to any existing Vary string on response, fixes #62
+
 ## 2.2.0b1
 - Quick dirty fix for new middleware-registry behaviour on sanic v22.9.0
 

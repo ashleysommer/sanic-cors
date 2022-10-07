@@ -11,6 +11,7 @@ import re
 import logging
 import collections
 from datetime import timedelta
+from typing import Dict
 try:
     # Sanic compat Header from Sanic v19.9.0 and above
     from sanic.compat import Header as CIMultiDict
@@ -173,12 +174,16 @@ def get_allow_headers(options, acl_request_headers):
     return None
 
 
-def get_cors_headers(options, request_headers, request_method):
-    origins_to_set = get_cors_origins(options, request_headers.get('Origin'))
-    headers = CIMultiDict()
+def get_cors_headers(options: Dict, request_headers: CIMultiDict, request_method):
+    found_origins_list = request_headers.getall('Origin', None)
+    found_origins = ", ".join(found_origins_list) if found_origins_list else None
+    origins_to_set = get_cors_origins(options, found_origins)
 
     if not origins_to_set:  # CORS is not enabled for this route
-        return headers
+        return CIMultiDict()
+
+    # This is a regular dict here, it gets converted to a CIMultiDict at the bottom of this function.
+    headers = {}
 
     for origin in origins_to_set:
         # TODO, with CIDict, with will only allow one origin
@@ -202,7 +207,9 @@ def get_cors_headers(options, request_headers, request_method):
             # If method is not a case-sensitive match for any of the values in
             # list of methods do not set any additional headers and terminate
             # this set of steps.
-            headers[ACL_ALLOW_HEADERS] = get_allow_headers(options, request_headers.get(ACL_REQUEST_HEADERS))
+            acl_request_headers_list = request_headers.getall(ACL_REQUEST_HEADERS, None)
+            acl_request_headers = ", ".join(acl_request_headers_list) if acl_request_headers_list else None
+            headers[ACL_ALLOW_HEADERS] = get_allow_headers(options, acl_request_headers)
             headers[ACL_MAX_AGE] = str(options.get('max_age'))  # sanic cannot handle integers in header values.
             headers[ACL_METHODS] = options.get('methods')
         else:
@@ -219,7 +226,7 @@ def get_cors_headers(options, request_headers, request_method):
         elif (len(options.get('origins')) > 1 or
               len(origins_to_set) > 1 or
               any(map(probably_regex, options.get('origins')))):
-            headers['Vary'] = 'Origin'
+            headers['Vary'] = "Origin"
 
     return CIMultiDict((k, v) for k, v in headers.items() if v)
 
@@ -251,14 +258,23 @@ def set_cors_headers(req, resp, req_context, options):
         resp.headers = CIMultiDict()
 
     headers_to_set = get_cors_headers(options, req.headers, req.method)
-
     LOG.debug('Settings CORS headers: %s', str(headers_to_set))
 
     for k, v in headers_to_set.items():
-        try:
-            resp.headers.add(k, v)
-        except Exception as e2:
-            resp.headers[k] = v
+        # Special case for "Vary" header, we should append it to a comma separated list
+        if (k == "vary" or k == "Vary") and "vary" in resp.headers:
+            vary_list = resp.headers.popall("vary")
+            vary_list.append(v)
+            new_vary = ", ".join(vary_list)
+            try:
+                resp.headers.add('Vary', new_vary)
+            except Exception:
+                resp.headers['Vary'] = new_vary
+        else:
+            try:
+                resp.headers.add(k, v)
+            except Exception:
+                resp.headers[k] = v
     return resp
 
 
