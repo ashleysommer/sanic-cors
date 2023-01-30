@@ -103,7 +103,7 @@ class CORS(Extension):
         The method or list of methods which the allowed origins are allowed to
         access for non-simple requests.
 
-        Default : [GET, HEAD, POST, OPTIONS, PUT, PATCH, DELETE]
+        Default : ['GET', 'HEAD', 'POST', 'OPTIONS', 'PUT', 'PATCH', 'DELETE']
     :type methods: list or string
 
     :param expose_headers:
